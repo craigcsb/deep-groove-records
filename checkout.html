@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Checkout — Deep Groove Records</title>
+  <link rel="stylesheet" href="css/modernist.css" />
+  <link rel="stylesheet" href="css/style.css" />
+
+  <!-- =========================================================
+       ADOBE WEB SDK EMBED CODE — paste on every page (see index.html)
+  ========================================================== -->
+
+</head>
+<body>
+
+  <nav class="nav site-nav">
+    <a class="nav-brand" href="index.html">Deep Groove Records</a>
+    <a href="index.html">Home</a>
+    <a href="products.html">Shop</a>
+    <button type="button" class="btn btn-secondary btn-icon cart-btn" onclick="location.href='cart.html'" aria-label="Cart">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/></svg>
+      <span class="cart-count" data-cart-badge>0</span>
+    </button>
+  </nav>
+
+  <main class="page-wrap" id="checkout-root"></main>
+
+  <footer class="site-footer">
+    Deep Groove Records — a learning site for Adobe Customer Journey Analytics / AJO. Not a real store.
+  </footer>
+
+  <script src="js/products-data.js"></script>
+  <script src="js/site.js"></script>
+  <script>
+    const root = document.getElementById("checkout-root");
+    const cart = getCart();
+
+    function renderCheckoutForm() {
+      root.innerHTML = `
+        <div class="section-head"><h2>Checkout</h2></div>
+        <table class="table cart-table">
+          <thead><tr><th>Item</th><th>Qty</th><th>Subtotal</th></tr></thead>
+          <tbody>
+            ${cart.map(function (item) {
+              return `<tr><td class="item-name">${item.name}</td><td>${item.qty}</td><td>${formatPrice(item.price * item.qty)}</td></tr>`;
+            }).join("")}
+          </tbody>
+        </table>
+        <div class="cart-summary">
+          <span class="total">Total: ${formatPrice(cartTotal(cart))}</span>
+        </div>
+        <p class="checkout-note">
+          This is a mock checkout — no payment is processed. Email is optional and only
+          used here to illustrate sending an authenticated identity alongside the ECID
+          (see the site README for how to wire that into the Web SDK identityMap).
+        </p>
+        <form id="checkout-form" class="checkout-form">
+          <div class="field">
+            <label for="email">Email (optional)</label>
+            <input class="input" type="email" id="email" placeholder="you@example.com" />
+          </div>
+          <button class="btn btn-primary" type="submit">Place order</button>
+        </form>
+      `;
+
+      document.getElementById("checkout-form").addEventListener("submit", function (e) {
+        e.preventDefault();
+        completeOrder(document.getElementById("email").value);
+      });
+
+      trackPageView();
+      trackCheckoutStart(cart);
+    }
+
+    function completeOrder(email) {
+      const order = {
+        purchaseID: "ORD-" + Date.now(),
+        priceTotal: +cartTotal(cart).toFixed(2)
+      };
+
+      trackPurchase(order, cart);
+
+      root.innerHTML = `
+        <div class="confirmation">
+          <div class="check">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>
+          </div>
+          <h1>Thanks for your order!</h1>
+          <p>Order ID</p>
+          <div class="order-id">${order.purchaseID}</div>
+          <p>Total charged: <strong>${formatPrice(order.priceTotal)}</strong></p>
+          <p><a class="btn btn-primary" href="products.html">Continue shopping</a></p>
+        </div>
+      `;
+
+      clearCart();
+    }
+
+    if (cart.length === 0) {
+      root.innerHTML = `
+        <div class="empty-state">
+          <h2>Nothing to check out</h2>
+          <p>Your cart is empty.</p>
+          <a class="btn btn-primary" href="products.html">Shop all records</a>
+        </div>
+      `;
+      trackPageView();
+    } else {
+      renderCheckoutForm();
+    }
+  </script>
+</body>
+</html>

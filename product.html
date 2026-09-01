@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Product — Deep Groove Records</title>
+  <link rel="stylesheet" href="css/modernist.css" />
+  <link rel="stylesheet" href="css/style.css" />
+
+  <!-- =========================================================
+       ADOBE WEB SDK EMBED CODE — paste on every page (see index.html)
+  ========================================================== -->
+
+</head>
+<body>
+
+  <nav class="nav site-nav">
+    <a class="nav-brand" href="index.html">Deep Groove Records</a>
+    <a href="index.html">Home</a>
+    <a href="products.html">Shop</a>
+    <button type="button" class="btn btn-secondary btn-icon cart-btn" onclick="location.href='cart.html'" aria-label="Cart">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/></svg>
+      <span class="cart-count" data-cart-badge>0</span>
+    </button>
+  </nav>
+
+  <main class="page-wrap" id="detail-root">
+    <!-- Filled by script below -->
+  </main>
+
+  <footer class="site-footer">
+    Deep Groove Records — a learning site for Adobe Customer Journey Analytics / AJO. Not a real store.
+  </footer>
+
+  <script src="js/products-data.js"></script>
+  <script src="js/site.js"></script>
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const product = getProductById(params.get("id"));
+    const root = document.getElementById("detail-root");
+
+    if (!product) {
+      root.innerHTML = `
+        <div class="empty-state">
+          <h2>Product not found</h2>
+          <p>That product doesn't exist in the catalog.</p>
+          <a class="btn btn-primary" href="products.html">Back to shop</a>
+        </div>
+      `;
+    } else {
+      root.innerHTML = `
+        <div class="detail">
+          <div class="cover grayscale"><img src="${product.cover}" alt="${product.name} cover" /></div>
+          <div>
+            <p class="artist">${product.artist}</p>
+            <h1>${product.name}</h1>
+            <p class="price">${formatPrice(product.price)}</p>
+            <p class="desc">${product.description}</p>
+            <div class="qty-row">
+              <label for="qty">Qty</label>
+              <input class="input" type="number" id="qty" value="1" min="1" />
+            </div>
+            <div class="actions">
+              <button class="btn btn-primary" id="add-to-cart-btn">Add to cart</button>
+              <a class="btn btn-secondary" href="products.html">Continue shopping</a>
+            </div>
+          </div>
+        </div>
+      `;
+
+      document.getElementById("add-to-cart-btn").addEventListener("click", function () {
+        const qty = Math.max(1, parseInt(document.getElementById("qty").value, 10) || 1);
+        addToCart(product, qty);
+        trackAddToCart(product, qty);
+        this.textContent = "Added ✓";
+        setTimeout(() => { this.textContent = "Add to cart"; }, 1200);
+      });
+
+      trackPageView();
+      trackProductView(product);
+    }
+  </script>
+</body>
+</html>

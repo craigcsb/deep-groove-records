@@ -1,0 +1,106 @@
+/* Deep Groove Records — layout on top of Modernist tokens (css/modernist.css). */
+
+.page-wrap { max-width: 1080px; margin: 0 auto; padding: 0 var(--space-6); }
+
+.site-nav { padding-left: var(--space-6); padding-right: var(--space-6); }
+.nav-brand { text-decoration: none; }
+.site-nav .cart-btn { position: relative; }
+.cart-count {
+  position: absolute; top: -6px; right: -8px;
+  min-width: 18px; height: 18px; padding: 0 4px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 800; font-family: var(--font-heading);
+  background: var(--color-accent); color: var(--color-bg);
+  border-radius: 50%;
+}
+
+main.page-wrap { padding-top: var(--space-8); padding-bottom: var(--space-8); }
+
+/* — hero — */
+.hero {
+  display: grid; grid-template-columns: 2fr 1fr; gap: var(--space-8);
+  align-items: end; padding-bottom: var(--space-8); margin-bottom: var(--space-8);
+  border-bottom: 2px solid var(--color-divider);
+}
+.hero .kicker {
+  font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--color-accent-700); margin: 0 0 var(--space-3);
+}
+.hero h1 { font-size: 52px; max-width: 14ch; margin-bottom: var(--space-4); }
+.hero p { color: color-mix(in srgb, var(--color-text) 65%, transparent); max-width: 46ch; margin-bottom: var(--space-4); }
+.hero-index { font-family: var(--font-heading); font-weight: 800; font-size: 15px; text-align: right;
+  color: color-mix(in srgb, var(--color-text) 45%, transparent); }
+
+.section-head {
+  display: flex; align-items: baseline; justify-content: space-between;
+  margin-bottom: var(--space-4);
+}
+.section-head h2 { font-size: 22px; margin: 0; }
+.section-head a { font-size: 13px; }
+
+/* — product grid / tiles — */
+.product-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 0;
+  border-top: 2px solid var(--color-divider);
+}
+.product-tile {
+  display: flex; flex-direction: column; text-decoration: none; color: var(--color-text);
+  border-right: 1px solid var(--color-divider); border-bottom: 1px solid var(--color-divider);
+  padding: var(--space-4);
+}
+.product-tile:hover .cover { opacity: 0.85; }
+.product-tile .cover { width: 100%; aspect-ratio: 1; margin-bottom: var(--space-3); overflow: hidden; }
+.cover img { width: 100%; height: 100%; object-fit: cover; }
+.product-tile .artist { font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase;
+  color: color-mix(in srgb, var(--color-text) 55%, transparent); margin: 0 0 4px; }
+.product-tile h3 { font-size: 16px; margin: 0 0 var(--space-2); }
+.product-tile .price { font-family: var(--font-heading); font-weight: 800; font-size: 15px; margin: 0; }
+
+@media (max-width: 760px) {
+  .product-grid { grid-template-columns: repeat(2, 1fr); }
+  .hero { grid-template-columns: 1fr; }
+  .hero-index { display: none; }
+}
+
+/* — product detail — */
+.detail {
+  display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-8);
+  align-items: start;
+}
+.detail .cover { width: 100%; aspect-ratio: 1; }
+.detail .artist { font-size: 13px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--color-accent-700); margin: 0 0 6px; }
+.detail h1 { font-size: 34px; margin-bottom: var(--space-2); }
+.detail .price { font-size: 22px; font-weight: 800; font-family: var(--font-heading); margin: 0 0 var(--space-4); }
+.detail .desc { color: color-mix(in srgb, var(--color-text) 65%, transparent); line-height: 1.65; margin-bottom: var(--space-6); max-width: 44ch; }
+.detail .qty-row { display: flex; align-items: center; gap: var(--space-3); margin-bottom: var(--space-4); }
+.detail .qty-row .input { width: 72px; text-align: center; }
+.detail .actions { display: flex; gap: var(--space-3); align-items: center; }
+@media (max-width: 760px) { .detail { grid-template-columns: 1fr; } }
+
+/* — cart / checkout — */
+.cart-table td, .cart-table th { vertical-align: middle; }
+.cart-table .item-name { font-weight: 600; }
+.remove-btn { display: inline-flex; align-items: center; gap: 6px; }
+.cart-summary {
+  display: flex; justify-content: flex-end; align-items: center; gap: var(--space-6);
+  padding-top: var(--space-4); margin-top: var(--space-2);
+}
+.cart-summary .total { font-size: 20px; font-weight: 800; font-family: var(--font-heading); }
+.checkout-note { max-width: 48ch; color: color-mix(in srgb, var(--color-text) 60%, transparent); font-size: 13px; margin: var(--space-4) 0 var(--space-6); }
+.checkout-form { max-width: 360px; }
+.checkout-form .field { margin-bottom: var(--space-4); }
+
+.empty-state, .confirmation { text-align: center; padding: 80px 20px; }
+.empty-state h2, .confirmation h1 { margin-bottom: var(--space-2); }
+.empty-state p, .confirmation p { color: color-mix(in srgb, var(--color-text) 60%, transparent); margin-bottom: var(--space-4); }
+.confirmation .check { color: var(--color-accent); margin-bottom: var(--space-3); }
+.confirmation .order-id {
+  font-family: ui-monospace, monospace; background: var(--color-surface);
+  padding: 6px 14px; display: inline-block; margin: var(--space-2) 0 var(--space-6);
+}
+
+footer.site-footer {
+  text-align: center; padding: var(--space-8) var(--space-6);
+  color: color-mix(in srgb, var(--color-text) 50%, transparent); font-size: 12px;
+  border-top: 2px solid var(--color-divider); margin-top: var(--space-8);
+}

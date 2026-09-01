@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Shop — Deep Groove Records</title>
+  <link rel="stylesheet" href="css/modernist.css" />
+  <link rel="stylesheet" href="css/style.css" />
+
+  <!-- =========================================================
+       ADOBE WEB SDK EMBED CODE — paste on every page (see index.html)
+  ========================================================== -->
+
+</head>
+<body>
+
+  <nav class="nav site-nav">
+    <a class="nav-brand" href="index.html">Deep Groove Records</a>
+    <a href="index.html">Home</a>
+    <a href="products.html" aria-current="page">Shop</a>
+    <button type="button" class="btn btn-secondary btn-icon cart-btn" onclick="location.href='cart.html'" aria-label="Cart">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/></svg>
+      <span class="cart-count" data-cart-badge>0</span>
+    </button>
+  </nav>
+
+  <main class="page-wrap">
+    <div class="section-head">
+      <h2>All records</h2>
+    </div>
+    <div class="product-grid" id="product-grid"></div>
+  </main>
+
+  <footer class="site-footer">
+    Deep Groove Records — a learning site for Adobe Customer Journey Analytics / AJO. Not a real store.
+  </footer>
+
+  <script src="js/products-data.js"></script>
+  <script src="js/site.js"></script>
+  <script>
+    const grid = document.getElementById("product-grid");
+    PRODUCTS.forEach(function (p) {
+      grid.insertAdjacentHTML("beforeend", `
+        <a class="product-tile" href="product.html?id=${p.id}">
+          <div class="cover grayscale"><img src="${p.cover}" alt="${p.name} cover" /></div>
+          <p class="artist">${p.artist}</p>
+          <h3>${p.name}</h3>
+          <p class="price">${formatPrice(p.price)}</p>
+        </a>
+      `);
+    });
+
+    trackPageView();
+  </script>
+</body>
+</html>
