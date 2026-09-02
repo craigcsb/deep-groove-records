@@ -14,6 +14,14 @@
        every page. Until you do, the site tracks nothing but still
        works normally.
   ========================================================== -->
+  <!-- Command queue stub: makes window.alloy available synchronously so
+       calls made before the async library below finishes loading are
+       queued (as pending promises) instead of silently dropped. -->
+  <script>
+    !function(n,o){o.forEach(function(o){n[o]||((n.__alloyNS=n.__alloyNS||[]).push(o),n[o]=
+    function(){var u=arguments;return new Promise(function(i,l){n[o].q.push([i,l,u])})},n[o].q=[])})}
+    (window,["alloy"]);
+  </script>
   <script src="https://assets.adobedtm.com/2d725b839720/1fb6fd223988/launch-89c903526a64.min.js" async></script>
 
 </head>
