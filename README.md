@@ -90,13 +90,18 @@ Domain 3 practice.
 The checkout page's optional email field is wired to identity: on "Place
 order", `trackPurchase(order, cart, email)` in `js/site.js` hashes the
 email (SHA-256, lowercased + trimmed, via the native SubtleCrypto API) and
-sends it as an `identityMap` alongside the `commerce.purchases` event:
+sends it as an `identityMap` field on the XDM payload of the
+`commerce.purchases` event (identityMap is part of the XDM ExperienceEvent
+schema, not a `sendEvent` command option — passing it as a sibling of `xdm`
+gets rejected by the SDK with `'identityMap': Unknown field`):
 
 ```js
 window.alloy("sendEvent", {
-  xdm: { ...xdmPayload },
-  identityMap: {
-    Email: [{ id: hashedEmail, authenticatedState: "ambiguous", primary: true }]
+  xdm: {
+    ...xdmPayload,
+    identityMap: {
+      Email: [{ id: hashedEmail, authenticatedState: "ambiguous", primary: true }]
+    }
   }
 });
 ```

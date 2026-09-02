@@ -70,17 +70,13 @@ function hasAlloy() {
   return typeof window.alloy === "function";
 }
 
-function sendXdmEvent(xdm, identityMap) {
-  const payload = { xdm: xdm };
-  if (identityMap) {
-    payload.identityMap = identityMap;
-  }
+function sendXdmEvent(xdm) {
   if (hasAlloy()) {
-    window.alloy("sendEvent", payload).catch(function (err) {
+    window.alloy("sendEvent", { xdm: xdm }).catch(function (err) {
       console.warn("[tracking] alloy sendEvent failed:", err);
     });
   } else {
-    console.info("[tracking] (alloy not installed yet — would have sent):", payload);
+    console.info("[tracking] (alloy not installed yet — would have sent):", xdm);
   }
 }
 
@@ -168,7 +164,8 @@ function trackPurchase(order, cart, email) {
   const identityMapPromise = emailIdentityMap(email);
   if (identityMapPromise) {
     identityMapPromise.then(function (identityMap) {
-      sendXdmEvent(xdm, identityMap);
+      xdm.identityMap = identityMap; // identityMap is an XDM field, not a sendEvent option
+      sendXdmEvent(xdm);
     });
   } else {
     sendXdmEvent(xdm);
