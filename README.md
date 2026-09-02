@@ -117,6 +117,24 @@ purchase event.
 The email is only ever hashed client-side — the raw address never leaves
 the browser.
 
+**Note for when you get to AJO (Build Guide Phase 6+):** hashing is a
+one-way operation — AEP can't "unhash" it, and neither can anything else.
+What the Identity Service actually does with it is match-by-comparison: it
+stitches identities together whenever it sees the same hash string again,
+without ever needing the plaintext. That's the right call here, and it's
+what external ad/matching destinations (Meta/Google Customer Match, clean
+rooms) expect. But it also means:
+
+- In CJA, this identity reports as the raw hash string, not a readable
+  email. A human-readable value would have to come from a separate
+  Profile/CRM dataset carrying both, joined via the identity graph.
+- **AJO can't send an email to a hash.** If a later phase wants Journey
+  Optimizer to actually message this person, the hashed `identityMap`
+  value here isn't enough — you'd need the *real* address available too,
+  either as an unhashed `Email` identity or as a Profile attribute (e.g.
+  `personalEmail.address`), sent alongside or instead of the hash
+  depending on the use case.
+
 ## Design system note
 
 The visual redesign runs on `css/modernist.css` (a standalone design-token
