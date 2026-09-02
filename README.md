@@ -85,25 +85,32 @@ Assurance (Phase 4) against what's arriving in the `Alloy Request` payload,
 and adjust `js/site.js` to match — that mismatch-diagnosis is itself good
 Domain 3 practice.
 
-## Extending for cross-channel / authenticated identity
+## Cross-channel / authenticated identity
 
-The checkout page collects an optional email but doesn't currently send it
-as an identity. To demonstrate authenticated-identity stitching (useful for
-Build Guide Phase 6), you'd extend `trackPurchase` in `js/site.js` to pass
-an `identityMap` alongside `xdm`, e.g.:
+The checkout page's optional email field is wired to identity: on "Place
+order", `trackPurchase(order, cart, email)` in `js/site.js` hashes the
+email (SHA-256, lowercased + trimmed, via the native SubtleCrypto API) and
+sends it as an `identityMap` alongside the `commerce.purchases` event:
 
 ```js
 window.alloy("sendEvent", {
   xdm: { ...xdmPayload },
-  data: {},
+  identityMap: {
+    Email: [{ id: hashedEmail, authenticatedState: "ambiguous", primary: true }]
+  }
 });
-// or, more directly, configure Web SDK's identityMap via alloy("setConsent"/"configure")
-// — see Adobe's identity docs for the exact pattern once you get here.
 ```
 
-Left as a deliberate next step rather than pre-built, since working out the
-identity wiring yourself is exactly the kind of hands-on practice the study
-plan calls for.
+`authenticatedState` is `"ambiguous"` rather than `"authenticated"` since
+this is a typed-in guest-checkout field, not a real login — useful for
+Build Guide Phase 6 identity-stitching exercises as-is. If you later add a
+real login flow, capture the email at sign-in instead (and set
+`authenticatedState: "authenticated"`), and consider persisting it
+(localStorage) so it's attached to page-view events too, not just the
+purchase event.
+
+The email is only ever hashed client-side — the raw address never leaves
+the browser.
 
 ## Design system note
 

@@ -80,7 +80,7 @@
         priceTotal: +cartTotal(cart).toFixed(2)
       };
 
-      trackPurchase(order, cart);
+      trackPurchase(order, cart, email);
 
       root.innerHTML = `
         <div class="confirmation">

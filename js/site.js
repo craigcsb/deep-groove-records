@@ -70,14 +70,47 @@ function hasAlloy() {
   return typeof window.alloy === "function";
 }
 
-function sendXdmEvent(xdm) {
+function sendXdmEvent(xdm, identityMap) {
+  const payload = { xdm: xdm };
+  if (identityMap) {
+    payload.identityMap = identityMap;
+  }
   if (hasAlloy()) {
-    window.alloy("sendEvent", { xdm: xdm }).catch(function (err) {
+    window.alloy("sendEvent", payload).catch(function (err) {
       console.warn("[tracking] alloy sendEvent failed:", err);
     });
   } else {
-    console.info("[tracking] (alloy not installed yet — would have sent):", xdm);
+    console.info("[tracking] (alloy not installed yet — would have sent):", payload);
   }
+}
+
+/* ---------- Identity: email → identityMap ----------
+   Emails are hashed (SHA-256, lowercased + trimmed) before they ever leave
+   the browser — Adobe's identity graph and any downstream Audience Manager
+   / destination matching expect hashed PII, not raw addresses. Uses the
+   native SubtleCrypto API, so no extra library is needed; it requires a
+   secure context, which GitHub Pages (HTTPS) satisfies. */
+
+async function sha256Hex(str) {
+  const bytes = new TextEncoder().encode(str);
+  const hashBuffer = await crypto.subtle.digest("SHA-256", bytes);
+  return Array.from(new Uint8Array(hashBuffer))
+    .map(function (b) { return b.toString(16).padStart(2, "0"); })
+    .join("");
+}
+
+// Returns a Promise<identityMap> for a typed-in checkout email, or null if
+// none was given. authenticatedState is "ambiguous" (not "authenticated")
+// because this is a guest-checkout field, not a real login.
+function emailIdentityMap(email) {
+  if (!email || !email.trim()) {
+    return null;
+  }
+  return sha256Hex(email.trim().toLowerCase()).then(function (hashedEmail) {
+    return {
+      Email: [{ id: hashedEmail, authenticatedState: "ambiguous", primary: true }]
+    };
+  });
 }
 
 function trackPageView() {
@@ -119,8 +152,8 @@ function trackCheckoutStart(cart) {
   });
 }
 
-function trackPurchase(order, cart) {
-  sendXdmEvent({
+function trackPurchase(order, cart, email) {
+  const xdm = {
     eventType: "commerce.purchases",
     commerce: {
       purchases: { value: 1 },
@@ -130,7 +163,16 @@ function trackPurchase(order, cart) {
       }
     },
     productListItems: cart.map(function (item) { return productToListItem(item, item.qty); })
-  });
+  };
+
+  const identityMapPromise = emailIdentityMap(email);
+  if (identityMapPromise) {
+    identityMapPromise.then(function (identityMap) {
+      sendXdmEvent(xdm, identityMap);
+    });
+  } else {
+    sendXdmEvent(xdm);
+  }
 }
 
 document.addEventListener("DOMContentLoaded", updateCartBadge);
