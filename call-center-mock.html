@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Call Centre Mock — Deep Groove Records</title>
+<style>
+  :root {
+    --bg: #f3f2f2;
+    --surface: #ffffff;
+    --text: #201e1d;
+    --muted: #605d5d;
+    --accent: #ec3013;
+    --border: #d7d3d3;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    padding: 32px;
+  }
+  .wrap { max-width: 1080px; margin: 0 auto; }
+  h1 { font-size: 20px; margin: 0 0 4px; }
+  .subtitle { color: var(--muted); font-size: 13px; margin: 0 0 24px; }
+  .note {
+    background: #fff2ef; border: 1px solid #ffc4b8; border-radius: 4px;
+    padding: 10px 14px; font-size: 13px; margin-bottom: 24px;
+  }
+  .card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 6px;
+    padding: 20px; margin-bottom: 24px;
+  }
+  .card h2 { font-size: 15px; margin: 0 0 16px; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .field { display: flex; flex-direction: column; gap: 4px; }
+  .field.full { grid-column: 1 / -1; }
+  label { font-size: 12px; font-weight: 600; color: var(--muted); }
+  input, select, textarea {
+    font: inherit; font-size: 14px; padding: 8px 10px;
+    border: 1px solid var(--border); border-radius: 4px; background: var(--surface);
+  }
+  textarea { min-height: 60px; resize: vertical; }
+  .actions { display: flex; gap: 10px; margin-top: 18px; }
+  button {
+    font: inherit; font-size: 14px; font-weight: 600; padding: 9px 16px;
+    border-radius: 4px; border: 1px solid var(--border); background: var(--surface);
+    color: var(--text); cursor: pointer;
+  }
+  button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  button.primary:hover { background: #c94b39; }
+  button:hover { background: #f8f4f4; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--border); }
+  th { color: var(--muted); font-weight: 600; }
+  .empty { color: var(--muted); font-size: 13px; padding: 16px 0; }
+  .row-actions button { padding: 4px 8px; font-size: 12px; font-weight: 400; }
+  .count { font-size: 13px; color: var(--muted); margin-bottom: 12px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p><a href="index.html">← Back to Deep Groove Records</a></p>
+  <h1>Call Centre Mock</h1>
+  <p class="subtitle">Internal agent console — simulates call-log records for the craig-call-centre-data schema. Not a customer-facing page; linked for demo convenience only.</p>
+
+  <div class="note">
+    Enter the customer's existing <strong>CRM ID</strong> (e.g. <code>CRM-F660AB912EC1</code>) exactly as it
+    appears from a real sign-in on the site — this is what joins a call record to that person's web activity
+    in CJA. Everything else is optional detail for the log.
+  </div>
+
+  <div class="card">
+    <h2>Log a call</h2>
+    <form id="call-form">
+      <div class="grid">
+        <div class="field full">
+          <label for="crmId">Customer CRM ID *</label>
+          <input id="crmId" placeholder="CRM-F660AB912EC1" required />
+        </div>
+
+        <div class="field">
+          <label for="callReason">Call reason *</label>
+          <select id="callReason" required>
+            <option value="info">Information</option>
+            <option value="changeaddress">Change Address</option>
+            <option value="refund">Refund</option>
+            <option value="accountinfo">Account Info</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="callResolution">Resolution *</label>
+          <select id="callResolution" required>
+            <option value="resolved">Resolved</option>
+            <option value="escalated">Escalated</option>
+            <option value="followUp">Follow Up</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="callCentreAgentId">Agent ID</label>
+          <input id="callCentreAgentId" type="number" placeholder="e.g. 42" />
+        </div>
+
+        <div class="field">
+          <label for="callDurationSeconds">Call duration (seconds)</label>
+          <input id="callDurationSeconds" type="number" placeholder="e.g. 240" />
+        </div>
+
+        <div class="field">
+          <label for="phoneNumber">Phone number</label>
+          <input id="phoneNumber" placeholder="e.g. +44 7700 900123" />
+        </div>
+
+        <div class="field">
+          <label for="callTime">Call date/time</label>
+          <input id="callTime" type="datetime-local" />
+        </div>
+
+        <div class="field full">
+          <label for="agentNotes">Agent notes</label>
+          <textarea id="agentNotes" placeholder="Free text notes about the call"></textarea>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button type="submit" class="primary">Add call record</button>
+        <button type="button" id="clear-form">Clear form</button>
+      </div>
+    </form>
+  </div>
+
+  <div class="card">
+    <h2>Logged calls</h2>
+    <div class="count" id="count">0 calls logged</div>
+    <div id="table-wrap"></div>
+    <div class="actions">
+      <button type="button" class="primary" id="export-csv">Export CSV</button>
+      <button type="button" id="clear-all">Clear all</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const STORAGE_KEY = "callCentreMock_calls";
+
+  function loadCalls() {
+    try {
+      return JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function saveCalls(calls) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(calls));
+  }
+
+  function genId() {
+    return "call-" + Date.now() + "-" + Math.random().toString(36).slice(2, 8);
+  }
+
+  function labelFor(select, value) {
+    const opt = Array.from(select.options).find(function (o) { return o.value === value; });
+    return opt ? opt.textContent : value;
+  }
+
+  function render() {
+    const calls = loadCalls();
+    const countEl = document.getElementById("count");
+    countEl.textContent = calls.length + " call" + (calls.length === 1 ? "" : "s") + " logged";
+
+    const wrap = document.getElementById("table-wrap");
+    if (calls.length === 0) {
+      wrap.innerHTML = '<div class="empty">No calls logged yet — add one above.</div>';
+      return;
+    }
+
+    const rows = calls.map(function (c) {
+      return "<tr>" +
+        "<td>" + c.timestamp + "</td>" +
+        "<td>" + c.crmId + "</td>" +
+        "<td>" + c.callReasonLabel + "</td>" +
+        "<td>" + c.callResolutionLabel + "</td>" +
+        "<td>" + (c.callDurationSeconds || "-") + "</td>" +
+        '<td class="row-actions"><button type="button" data-remove="' + c._id + '">Remove</button></td>' +
+        "</tr>";
+    }).join("");
+
+    wrap.innerHTML =
+      "<table><thead><tr>" +
+      "<th>Time</th><th>CRM ID</th><th>Reason</th><th>Resolution</th><th>Duration (s)</th><th></th>" +
+      "</tr></thead><tbody>" + rows + "</tbody></table>";
+
+    wrap.querySelectorAll("[data-remove]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        const id = btn.getAttribute("data-remove");
+        saveCalls(loadCalls().filter(function (c) { return c._id !== id; }));
+        render();
+      });
+    });
+  }
+
+  function defaultNow() {
+    const d = new Date();
+    d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+    return d.toISOString().slice(0, 16);
+  }
+
+  document.getElementById("callTime").value = defaultNow();
+
+  document.getElementById("call-form").addEventListener("submit", function (e) {
+    e.preventDefault();
+
+    const crmId = document.getElementById("crmId").value.trim();
+    if (!crmId) return;
+
+    const callReasonSelect = document.getElementById("callReason");
+    const callResolutionSelect = document.getElementById("callResolution");
+    const callTimeValue = document.getElementById("callTime").value;
+
+    const call = {
+      _id: genId(),
+      eventType: "callCenter.interaction",
+      timestamp: callTimeValue ? new Date(callTimeValue).toISOString() : new Date().toISOString(),
+      crmId: crmId,
+      callReason: callReasonSelect.value,
+      callReasonLabel: labelFor(callReasonSelect, callReasonSelect.value),
+      callResolution: callResolutionSelect.value,
+      callResolutionLabel: labelFor(callResolutionSelect, callResolutionSelect.value),
+      callCentreAgentId: document.getElementById("callCentreAgentId").value || "",
+      callDurationSeconds: document.getElementById("callDurationSeconds").value || "",
+      phoneNumber: document.getElementById("phoneNumber").value.trim(),
+      agentNotes: document.getElementById("agentNotes").value.trim()
+    };
+
+    const calls = loadCalls();
+    calls.push(call);
+    saveCalls(calls);
+    render();
+
+    document.getElementById("call-form").reset();
+    document.getElementById("callTime").value = defaultNow();
+    document.getElementById("crmId").focus();
+  });
+
+  document.getElementById("clear-form").addEventListener("click", function () {
+    document.getElementById("call-form").reset();
+    document.getElementById("callTime").value = defaultNow();
+  });
+
+  document.getElementById("clear-all").addEventListener("click", function () {
+    if (confirm("Clear all logged calls? This can't be undone.")) {
+      saveCalls([]);
+      render();
+    }
+  });
+
+  function csvEscape(value) {
+    const str = String(value == null ? "" : value);
+    if (/[",\n]/.test(str)) {
+      return '"' + str.replace(/"/g, '""') + '"';
+    }
+    return str;
+  }
+
+  document.getElementById("export-csv").addEventListener("click", function () {
+    const calls = loadCalls();
+    if (calls.length === 0) {
+      alert("No calls to export yet.");
+      return;
+    }
+
+    const columns = [
+      "_id", "timestamp", "eventType", "crmId", "callReason", "callResolution",
+      "callCentreAgentId", "callDurationSeconds", "phoneNumber", "agentNotes"
+    ];
+
+    const header = columns.join(",");
+    const rows = calls.map(function (c) {
+      return columns.map(function (col) { return csvEscape(c[col]); }).join(",");
+    });
+
+    const csv = [header].concat(rows).join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "call-centre-export-" + Date.now() + ".csv";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  });
+
+  render();
+</script>
+</body>
+</html>

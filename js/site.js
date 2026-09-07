@@ -184,7 +184,7 @@ function updateAuthUI() {
   }
   const session = getCrmSession();
   if (session) {
-    btn.textContent = "Hi, " + session.identifier + " · Sign Out";
+    btn.textContent = "Hi, " + session.crmId + " · Sign Out";
     btn.onclick = signOut;
   } else {
     btn.textContent = "Sign In";
