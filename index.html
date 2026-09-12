@@ -28,7 +28,14 @@
 <body>
 
   <nav class="nav site-nav">
-    <a class="nav-brand" href="index.html">Deep Groove Records</a>
+    <a class="nav-brand" href="index.html">
+      <svg class="brand-mark" width="20" height="20" viewBox="0 0 20 20" aria-hidden="true">
+        <circle cx="10" cy="10" r="8.3" fill="none" stroke="currentColor" stroke-width="1.3" />
+        <circle cx="10" cy="10" r="8.3" fill="none" stroke="var(--color-accent)" stroke-width="1.3" stroke-dasharray="1.4 3.2" />
+        <circle cx="10" cy="10" r="1.7" fill="var(--color-accent)" />
+      </svg>
+      Deep Groove Records
+    </a>
     <a href="index.html" aria-current="page">Home</a>
     <a href="products.html">Shop</a>
     <a class="btn btn-secondary btn-icon" href="call-center-mock.html" aria-label="Call centre mock (demo tool)" title="Call centre mock (demo tool)">
@@ -43,15 +50,19 @@
 
   <main class="page-wrap">
     <section class="hero">
-      <div>
-        <p class="kicker">Est. for a Web SDK demo</p>
+      <div class="hero-copy">
+        <div class="hero-stamp-row">
+          <p class="stamp-badge">Cat# DGR&#8209;0001</p>
+          <p class="hero-issued">Issued for a Web SDK demo</p>
+        </div>
         <h1>A selection of the best.</h1>
         <p>A small demo record shop, built to generate real Web SDK events for Customer Journey Analytics and Adobe Journey Optimizer.</p>
-        <a class="btn btn-primary" href="products.html">Shop all records
+        <a class="btn btn-primary" href="products.html">Browse the crates
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
         </a>
+        <p class="hero-index">Side A / Track 01 — 06 records in catalog</p>
       </div>
-      <div class="hero-index">01 — Catalog<br />06 Records</div>
+      <div class="hero-disc-frame" id="hero-disc" aria-hidden="true"></div>
     </section>
 
     <div class="section-head">
@@ -72,13 +83,16 @@
     PRODUCTS.slice(0, 3).forEach(function (p) {
       featuredGrid.insertAdjacentHTML("beforeend", `
         <a class="product-tile" href="product.html?id=${p.id}">
-          <div class="cover grayscale"><img src="${p.cover}" alt="${p.name} cover" /></div>
+          <div class="cover">${discMarkup(p)}</div>
           <p class="artist">${p.artist}</p>
           <h3>${p.name}</h3>
           <p class="price">${formatPrice(p.price)}</p>
         </a>
       `);
     });
+
+    const heroProduct = PRODUCTS[0];
+    document.getElementById("hero-disc").innerHTML = discMarkup(heroProduct);
 
     trackPageView();
   </script>

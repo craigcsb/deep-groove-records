@@ -24,7 +24,14 @@
 <body>
 
   <nav class="nav site-nav">
-    <a class="nav-brand" href="index.html">Deep Groove Records</a>
+    <a class="nav-brand" href="index.html">
+      <svg class="brand-mark" width="20" height="20" viewBox="0 0 20 20" aria-hidden="true">
+        <circle cx="10" cy="10" r="8.3" fill="none" stroke="currentColor" stroke-width="1.3" />
+        <circle cx="10" cy="10" r="8.3" fill="none" stroke="var(--color-accent)" stroke-width="1.3" stroke-dasharray="1.4 3.2" />
+        <circle cx="10" cy="10" r="1.7" fill="var(--color-accent)" />
+      </svg>
+      Deep Groove Records
+    </a>
     <a href="index.html">Home</a>
     <a href="products.html" aria-current="page">Shop</a>
     <a class="btn btn-secondary btn-icon" href="call-center-mock.html" aria-label="Call centre mock (demo tool)" title="Call centre mock (demo tool)">
@@ -55,7 +62,7 @@
     PRODUCTS.forEach(function (p) {
       grid.insertAdjacentHTML("beforeend", `
         <a class="product-tile" href="product.html?id=${p.id}">
-          <div class="cover grayscale"><img src="${p.cover}" alt="${p.name} cover" /></div>
+          <div class="cover">${discMarkup(p)}</div>
           <p class="artist">${p.artist}</p>
           <h3>${p.name}</h3>
           <p class="price">${formatPrice(p.price)}</p>

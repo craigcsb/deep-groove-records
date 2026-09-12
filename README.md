@@ -137,8 +137,16 @@ rooms) expect. But it also means:
 
 ## Design system note
 
-The visual redesign runs on `css/modernist.css` (a standalone design-token
-stylesheet — colors, spacing, type) with `css/style.css` layered on top for
-page-specific layout. Product covers live in `assets/covers/` and are real
-album artwork — fine for local/private use; worth swapping for placeholder
-art if this ever goes fully public.
+The visual design runs on `css/modernist.css` (a standalone design-token
+stylesheet — colors, spacing, type, the `.disc-*` label component) with
+`css/style.css` layered on top for page-specific layout. Direction: "Test
+Pressing / White Label" — kraft/bone paper, one rubber-stamp red accent, a
+stamped monospace face for catalog numbers and labels, a plain grotesk for
+reading. Full contract in `.impeccable/surfaces/storefront.md`.
+
+Product "covers" are generated, not photographed: `discMarkup()` in
+`js/site.js` draws each record as a die-cut test-pressing label (sleeve,
+groove rings, spindle hole, catalog number) from the product's `color` and
+`sku` fields. There is no `assets/covers/` art anymore — the site previously
+used real album artwork there, which was removed since this is meant to stay
+a private/local demo and shouldn't ship real copyrighted covers.

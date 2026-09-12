@@ -52,6 +52,29 @@ function formatPrice(n) {
   return "$" + n.toFixed(2);
 }
 
+/* ---------- Disc: the die-cut test-pressing label standing in for cover
+   art (see css/modernist.css .disc-*). Every record draws the same sleeve
+   and groove rings; only the label ink (product.color) and catalog number
+   (product.sku) vary — no photographic covers, on purpose. ---------- */
+
+function discMarkup(product) {
+  const cat = (product.sku || "").replace(/-/g, " ");
+  // textLength forces every catalog number, short or long, onto the same
+  // fitted width — a die-cut label can't overflow its own printed ring.
+  return (
+    '<svg class="disc" viewBox="0 0 100 100" role="img" aria-label="' + product.name + ' label art">' +
+      '<rect class="disc-sleeve" x="0" y="0" width="100" height="100" />' +
+      '<polygon class="disc-fold" points="0,0 16,0 0,16" />' +
+      '<circle class="disc-groove" cx="50" cy="50" r="35" />' +
+      '<circle class="disc-groove" cx="50" cy="50" r="31.5" />' +
+      '<circle class="disc-label" cx="50" cy="50" r="28" style="fill:' + product.color + '" />' +
+      '<text class="disc-cat" x="50" y="41" text-anchor="middle" textLength="44" lengthAdjust="spacing">' + cat + '</text>' +
+      '<circle class="disc-hole" cx="50" cy="50" r="4.5" />' +
+      '<text class="disc-stamp" x="50" y="88" text-anchor="middle">33⅓ RPM · TEST PRESS</text>' +
+    '</svg>'
+  );
+}
+
 function updateCartBadge() {
   const badge = document.querySelector("[data-cart-badge]");
   if (badge) {
