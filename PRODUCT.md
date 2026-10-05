@@ -38,6 +38,8 @@ Tracked actions (must be preserved exactly — event names and XDM shape are loa
 - `commerce.productListAdds` on Add to Cart
 - `commerce.checkouts` on checkout load
 - `commerce.purchases` on Place Order (then clears cart)
+- Page views landing with `?gclid=` also carry `marketing.trackingCode` / `campaignName` / `campaignGroup`
+- AJO ad-offer slot (`[data-ajo-slot]` on home): `decisioning.propositionDisplay` / `decisioning.propositionInteract`
 
 All tracking funnels through `sendXdmEvent()` in `js/site.js` (`trackPageView`, `trackProductView`, `trackAddToCart`, `trackCheckoutStart`, `trackPurchase`), calling `window.alloy("sendEvent", { xdm })` when the Web SDK is present, else logging to console — the site must stay fully usable with no SDK installed.
 

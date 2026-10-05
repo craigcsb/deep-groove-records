@@ -93,7 +93,10 @@ function hasAlloy() {
   return typeof window.alloy === "function";
 }
 
-function sendXdmEvent(xdm) {
+// `options` are extra sendEvent options (e.g. `personalization`) merged in
+// beside `xdm`. Returns the sendEvent promise so callers can read
+// propositions; with no SDK it resolves to an empty result.
+function sendXdmEvent(xdm, options) {
   const crmMap = crmIdentityMap();
   if (crmMap) {
     // Signed in: attach the authenticated CRM ID to every event, not just
@@ -111,12 +114,13 @@ function sendXdmEvent(xdm) {
   }
 
   if (hasAlloy()) {
-    window.alloy("sendEvent", { xdm: xdm }).catch(function (err) {
+    return window.alloy("sendEvent", Object.assign({ xdm: xdm }, options)).catch(function (err) {
       console.warn("[tracking] alloy sendEvent failed:", err);
+      return { propositions: [] };
     });
-  } else {
-    console.info("[tracking] (alloy not installed yet — would have sent):", xdm);
   }
+  console.info("[tracking] (alloy not installed yet — would have sent):", xdm);
+  return Promise.resolve({ propositions: [] });
 }
 
 /* ---------- Identity: email → identityMap ----------
@@ -265,9 +269,75 @@ function closeAuthModal() {
 }
 
 function trackPageView() {
+  sendXdmEvent(
+    Object.assign({ eventType: "web.webpagedetails.pageViews" }, adClickXdm()),
+    personalizationOptions()
+  ).then(renderAdOffer);
+}
+
+/* ---------- Ad click-through (Google Ads gclid + utm) ----------
+   A gclid identifies one click, not one ad, so the ad's final URL suffix
+   also carries utm_campaign (a per-ad key) — that's what the "clicked ad X,
+   hasn't bought" audience filters on. Only the landing page view carries
+   these; nothing is persisted. Requires the field group providing
+   `marketing.*` on the schema. */
+
+function adClickXdm() {
+  const params = new URLSearchParams(window.location.search);
+  const gclid = params.get("gclid");
+  if (!gclid) {
+    return {};
+  }
+  const marketing = { trackingCode: gclid };
+  if (params.get("utm_campaign")) marketing.campaignName = params.get("utm_campaign");
+  if (params.get("utm_source")) marketing.campaignGroup = params.get("utm_source");
+  return { marketing: marketing };
+}
+
+/* ---------- AJO code-based experience: ad offer slot ----------
+   The surface is page-relative: the Web SDK expands "#ad-offer" to
+   web://<host>/<path>#ad-offer for the current page, which the AJO channel
+   configuration ("Pages matching rule", location "ad-offer") matches on any
+   site page. Any page with a [data-ajo-slot] element requests it. */
+
+const AJO_OFFER_SURFACE = "#ad-offer";
+const HTML_CONTENT_SCHEMA = "https://ns.adobe.com/personalization/html-content-item";
+
+function personalizationOptions() {
+  if (!document.querySelector("[data-ajo-slot]")) {
+    return {};
+  }
+  return { personalization: { surfaces: [AJO_OFFER_SURFACE] } };
+}
+
+function sendPropositionEvent(proposition, eventType, propositionEventType) {
   sendXdmEvent({
-    eventType: "web.webpagedetails.pageViews"
+    eventType: eventType,
+    _experience: {
+      decisioning: {
+        propositions: [{ id: proposition.id, scope: proposition.scope, scopeDetails: proposition.scopeDetails }],
+        propositionEventType: propositionEventType
+      }
+    }
   });
+}
+
+function renderAdOffer(result) {
+  const slot = document.querySelector("[data-ajo-slot]");
+  if (!slot || !result || !result.propositions) {
+    return;
+  }
+  const proposition = result.propositions.find(function (p) { return (p.scope || "").endsWith(AJO_OFFER_SURFACE); });
+  const item = proposition && (proposition.items || []).find(function (i) { return i.schema === HTML_CONTENT_SCHEMA; });
+  if (!item || !item.data || !item.data.content) {
+    return;
+  }
+  slot.innerHTML = item.data.content;
+  slot.hidden = false;
+  sendPropositionEvent(proposition, "decisioning.propositionDisplay", { display: 1 });
+  slot.addEventListener("click", function () {
+    sendPropositionEvent(proposition, "decisioning.propositionInteract", { interact: 1 });
+  }, { once: true });
 }
 
 function productToListItem(product, qty) {

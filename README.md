@@ -13,7 +13,9 @@ doc walks through the AEP/CJA/AJO side; this README covers the site side.
 
 | Page | Fires |
 |---|---|
-| `index.html` | page view |
+| `index.html` | page view (+ requests the AJO ad-offer surface) |
+| any page with `?gclid=...` | page view also carries `marketing.*` |
+| (AJO ad offer rendered / clicked) | `decisioning.propositionDisplay` / `decisioning.propositionInteract` |
 | `products.html` | page view |
 | `product.html?id=...` | page view + `commerce.productViews` |
 | (Add to cart button) | `commerce.productListAdds` |
@@ -84,6 +86,29 @@ If field names in your actual schema differ slightly, check them in
 Assurance (Phase 4) against what's arriving in the `Alloy Request` payload,
 and adjust `js/site.js` to match — that mismatch-diagnosis is itself good
 Domain 3 practice.
+
+## Ad click-through personalisation (AJO code-based experience)
+
+- **Capture:** when a page loads with `gclid` in the URL, the page view adds
+  `marketing.trackingCode` (gclid), `marketing.campaignName` (`utm_campaign`,
+  the per-ad key) and `marketing.campaignGroup` (`utm_source`). The schema
+  needs the field group that provides `marketing.*` — add it before deploying,
+  or those events fail validation. Set the Google Ads final URL suffix to e.g.
+  `utm_source=google&utm_medium=cpc&utm_campaign=<ad-key>`.
+- **Audience:** include events with `marketing.campaignName = <ad-key>`,
+  exclude `commerce.purchases` events. Expect batch evaluation (daily), so
+  the offer shows on a later visit, not the landing one.
+- **Delivery:** pages with a `[data-ajo-slot]` element (currently
+  `index.html`) request the page-relative surface `#ad-offer`, which the Web
+  SDK expands to e.g.
+  `web://craigcsb.github.io/deep-groove-records-staging/index.html#ad-offer`.
+  The AJO code-based experience channel configuration uses Web → "Pages
+  matching rule" (domain `craigcsb.github.io`, path starts with
+  `/deep-groove-records-staging/`) with location on page `ad-offer`, and a
+  campaign targets the audience with HTML content. `renderAdOffer()` injects
+  it and sends display/interact events (`_experience.decisioning`). The
+  datastream needs Adobe Journey Optimizer, Edge Segmentation and
+  Personalization Destinations enabled, and the merge policy Active-On-Edge.
 
 ## Cross-channel / authenticated identity
 
