@@ -43,7 +43,7 @@ Tracked actions (must be preserved exactly — event names and XDM shape are loa
 
 All tracking funnels through `sendXdmEvent()` in `js/site.js` (`trackPageView`, `trackProductView`, `trackAddToCart`, `trackCheckoutStart`, `trackPurchase`), calling `window.alloy("sendEvent", { xdm })` when the Web SDK is present, else logging to console — the site must stay fully usable with no SDK installed.
 
-Checkout has an optional guest email field wired to `identityMap` (client-side SHA-256 hash only; raw email never leaves the browser) — this identity-stitching wiring must survive any redesign untouched.
+Checkout has an optional guest email field wired to `identityMap` under the `Email_LC_SHA256` namespace (client-side SHA-256 hash only; raw email never leaves the browser) — this identity-stitching wiring must survive any redesign untouched.
 
 A redesign must not remove or rename tracking hooks, event names, XDM field structure, or the Web SDK embed comment blocks, and must not change what data reaches `sendXdmEvent()`.
 

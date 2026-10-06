@@ -102,7 +102,7 @@ function sendXdmEvent(xdm, options) {
     // Signed in: attach the authenticated CRM ID to every event, not just
     // purchases — that's what makes it a realistic authenticated identity
     // rather than a one-off. It's the strongest identity signal we have, so
-    // demote any other identity (e.g. the guest-checkout Email) on this
+    // demote any other identity (e.g. the guest-checkout Email_LC_SHA256) on this
     // event to non-primary rather than leaving two identities flagged primary.
     xdm.identityMap = Object.assign({}, xdm.identityMap, crmMap);
     Object.keys(xdm.identityMap).forEach(function (namespace) {
@@ -147,7 +147,10 @@ function emailIdentityMap(email) {
   }
   return sha256Hex(email.trim().toLowerCase()).then(function (hashedEmail) {
     return {
-      Email: [{ id: hashedEmail, authenticatedState: "ambiguous", primary: true }]
+      // Email_LC_SHA256 is the standard namespace for hashed emails; the
+      // plain "Email" namespace expects a real address, and purchases
+      // carrying a hash under it were dropped.
+      Email_LC_SHA256: [{ id: hashedEmail, authenticatedState: "ambiguous", primary: true }]
     };
   });
 }

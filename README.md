@@ -125,11 +125,17 @@ window.alloy("sendEvent", {
   xdm: {
     ...xdmPayload,
     identityMap: {
-      Email: [{ id: hashedEmail, authenticatedState: "ambiguous", primary: true }]
+      Email_LC_SHA256: [{ id: hashedEmail, authenticatedState: "ambiguous", primary: true }]
     }
   }
 });
 ```
+
+The namespace is `Email_LC_SHA256` ("Emails (SHA256, lowercased)"), AEP's
+standard namespace for hashed emails. Don't send the hash under the plain
+`Email` namespace, which expects a real address: purchase events carrying a
+hash there were dropped during testing. Hashes sent before this change sit
+under `Email` and won't link to the new ones.
 
 `authenticatedState` is `"ambiguous"` rather than `"authenticated"` since
 this is a typed-in guest-checkout field, not a real login — useful for
