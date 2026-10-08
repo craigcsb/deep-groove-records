@@ -14,7 +14,8 @@ doc walks through the AEP/CJA/AJO side; this README covers the site side.
 | Page | Fires |
 |---|---|
 | `index.html` | page view (+ requests the AJO ad-offer surface) |
-| any page with `?gclid=...` | page view also carries `marketing.*` |
+| any page with `?utm_campaign=...` and/or `?gclid=...` | page view also carries `marketing.*` |
+| `landing.html` | page view (+ requests the AJO `#landing-hero` surface) |
 | (AJO ad offer rendered / clicked) | `decisioning.propositionDisplay` / `decisioning.propositionInteract` |
 | `products.html` | page view |
 | `product.html?id=...` | page view + `commerce.productViews` |
@@ -89,26 +90,69 @@ Domain 3 practice.
 
 ## Ad click-through personalisation (AJO code-based experience)
 
-- **Capture:** when a page loads with `gclid` in the URL, the page view adds
-  `marketing.trackingCode` (gclid), `marketing.campaignName` (`utm_campaign`,
-  the per-ad key) and `marketing.campaignGroup` (`utm_source`). The schema
+- **Capture:** when a page loads with `gclid` and/or `utm_campaign` in the URL,
+  the page view adds `marketing.trackingCode` (gclid), `marketing.campaignName`
+  (`utm_campaign`, the per-ad key) and `marketing.campaignGroup` (`utm_source`),
+  each only when present. The schema
   needs the field group that provides `marketing.*` — add it before deploying,
   or those events fail validation. Set the Google Ads final URL suffix to e.g.
   `utm_source=google&utm_medium=cpc&utm_campaign=<ad-key>`.
-- **Audience:** include events with `marketing.campaignName = <ad-key>`,
-  exclude `commerce.purchases` events. Expect batch evaluation (daily), so
-  the offer shows on a later visit, not the landing one.
-- **Delivery:** pages with a `[data-ajo-slot]` element (currently
+- **Audience:** two single-event Edge audiences (Edge Merge Policy, 24h
+  window) — "ad click-through" (`marketing.campaignName = <ad-key>` and
+  `marketing.trackingCode` exists) and "purchased" (`commerce.purchases.value`
+  exists) — combined as a third Edge audience: in click-through AND NOT in
+  purchased. Don't exclude purchase *events* inside the click-through
+  audience instead: that qualifies people but doesn't reliably remove them.
+  New or edited Edge audiences take up to an hour before AJO uses them.
+- **Delivery:** pages with a `[data-ajo-surface="#ad-offer"]` element (currently
   `index.html`) request the page-relative surface `#ad-offer`, which the Web
   SDK expands to e.g.
   `web://craigcsb.github.io/deep-groove-records-staging/index.html#ad-offer`.
   The AJO code-based experience channel configuration uses Web → "Pages
   matching rule" (domain `craigcsb.github.io`, path starts with
   `/deep-groove-records-staging/`) with location on page `ad-offer`, and a
-  campaign targets the audience with HTML content. `renderAdOffer()` injects
+  campaign targets the audience with HTML content. `renderPropositions()` injects
   it and sends display/interact events (`_experience.decisioning`). The
   datastream needs Adobe Journey Optimizer, Edge Segmentation and
   Personalization Destinations enabled, and the merge policy Active-On-Edge.
+
+## Landing page variants (`landing.html`, AJO code-based JSON)
+
+`landing.html` has a hero (image, kicker, headline, paragraph, CTA) that
+changes by `utm_campaign`, above a section that's the same for everyone.
+The hero element requests the surface `#landing-hero`; the HTML holds a
+default hero, hidden until AJO answers (or for at most 2s, after which the
+default shows and a late answer is ignored).
+
+- **AJO:** one code-based channel configuration (Web → Pages matching rule,
+  location on page `landing-hero`, format **JSON**) and one campaign per
+  variant. Each campaign's audience is an Edge audience (Edge Merge
+  Policy) on `marketing.campaignName = <utm value>`. Targeting rules inside
+  one campaign won't work here: their audience picker only offers
+  default-merge-policy audiences.
+- **Tracking:** any page view with `utm_campaign` in the URL carries
+  `marketing.campaignName` (no `gclid` needed), so a test URL is just
+  `landing.html?utm_campaign=jazzWeek`.
+- **JSON contract** (all keys optional; a missing key keeps the default):
+
+  ```json
+  {
+    "campaign": "jazzWeek",
+    "imageUrl": "assets/landing/jazz.svg",
+    "imageAlt": "Blue record over diagonal hairlines",
+    "kicker": "Jazz week",
+    "headline": "Blue notes, pressed fresh.",
+    "paragraph": "Seven days of jazz pressings, from hard bop to late-night ballads.",
+    "ctaText": "Shop the jazz crate",
+    "ctaUrl": "products.html"
+  }
+  ```
+
+  Text is set as plain text, never HTML. `imageUrl`/`ctaUrl` must be
+  relative or `https://`. `campaign` should equal the variant's
+  `utm_campaign`: if a visitor qualifies for several variants, the one
+  matching the current URL wins. Placeholder images for three variants
+  live in `assets/landing/` (`jazz.svg`, `rock.svg`, `soul.svg`).
 
 ## Cross-channel / authenticated identity
 

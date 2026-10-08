@@ -272,45 +272,66 @@ function closeAuthModal() {
 }
 
 function trackPageView() {
+  revealPendingAfterTimeout();
   sendXdmEvent(
-    Object.assign({ eventType: "web.webpagedetails.pageViews" }, adClickXdm()),
+    Object.assign({ eventType: "web.webpagedetails.pageViews" }, campaignXdm()),
     personalizationOptions()
-  ).then(renderAdOffer);
+  ).then(renderPropositions);
 }
 
-/* ---------- Ad click-through (Google Ads gclid + utm) ----------
-   A gclid identifies one click, not one ad, so the ad's final URL suffix
-   also carries utm_campaign (a per-ad key) — that's what the "clicked ad X,
-   hasn't bought" audience filters on. Only the landing page view carries
-   these; nothing is persisted. Requires the field group providing
-   `marketing.*` on the schema. */
+/* ---------- Campaign click-through (utm + Google Ads gclid) ----------
+   utm_campaign is sent whenever present — the landing page variants key
+   off it alone. A gclid identifies one click, not one ad, so the "clicked
+   ad X, hasn't bought" audience needs both (trackingCode exists AND
+   campaignName = X). Only the landing page view carries these; nothing is
+   persisted. Requires the field group providing `marketing.*` on the schema. */
 
-function adClickXdm() {
+function campaignXdm() {
   const params = new URLSearchParams(window.location.search);
-  const gclid = params.get("gclid");
-  if (!gclid) {
-    return {};
-  }
-  const marketing = { trackingCode: gclid };
+  const marketing = {};
+  if (params.get("gclid")) marketing.trackingCode = params.get("gclid");
   if (params.get("utm_campaign")) marketing.campaignName = params.get("utm_campaign");
   if (params.get("utm_source")) marketing.campaignGroup = params.get("utm_source");
-  return { marketing: marketing };
+  return Object.keys(marketing).length ? { marketing: marketing } : {};
 }
 
-/* ---------- AJO code-based experience: ad offer slot ----------
-   The surface is page-relative: the Web SDK expands "#ad-offer" to
-   web://<host>/<path>#ad-offer for the current page, which the AJO channel
-   configuration ("Pages matching rule", location "ad-offer") matches on any
-   site page. Any page with a [data-ajo-slot] element requests it. */
+/* ---------- AJO code-based experiences ----------
+   Any element with data-ajo-surface="#location" requests that surface on
+   page view. Surfaces are page-relative: the Web SDK expands "#location" to
+   web://<host>/<path>#location for the current page, which an AJO channel
+   configuration ("Pages matching rule" + that location) matches on any site
+   page. HTML content is injected into the element; JSON content is handed
+   to the page as an "ajo:content" event on the element (detail = the JSON),
+   so each page decides how to render it. Elements marked data-ajo-pending
+   (default content hidden until the decision is known) are revealed once
+   it arrives, or after AJO_DECISION_TIMEOUT_MS if it never does — a late
+   decision is then ignored rather than swapping content under the reader. */
 
-const AJO_OFFER_SURFACE = "#ad-offer";
 const HTML_CONTENT_SCHEMA = "https://ns.adobe.com/personalization/html-content-item";
+const JSON_CONTENT_SCHEMA = "https://ns.adobe.com/personalization/json-content-item";
+const AJO_DECISION_TIMEOUT_MS = 2000;
+
+function ajoSurfaceElements() {
+  return Array.prototype.slice.call(document.querySelectorAll("[data-ajo-surface]"));
+}
 
 function personalizationOptions() {
-  if (!document.querySelector("[data-ajo-slot]")) {
+  const surfaces = ajoSurfaceElements()
+    .map(function (el) { return el.getAttribute("data-ajo-surface"); })
+    .filter(function (surface, i, all) { return all.indexOf(surface) === i; });
+  if (!surfaces.length) {
     return {};
   }
-  return { personalization: { surfaces: [AJO_OFFER_SURFACE] } };
+  return { personalization: { surfaces: surfaces } };
+}
+
+function revealPendingAfterTimeout() {
+  setTimeout(function () {
+    document.querySelectorAll("[data-ajo-pending]").forEach(function (el) {
+      el.removeAttribute("data-ajo-pending");
+      el.setAttribute("data-ajo-timed-out", "");
+    });
+  }, AJO_DECISION_TIMEOUT_MS);
 }
 
 function sendPropositionEvent(proposition, eventType, propositionEventType) {
@@ -325,22 +346,56 @@ function sendPropositionEvent(proposition, eventType, propositionEventType) {
   });
 }
 
-function renderAdOffer(result) {
-  const slot = document.querySelector("[data-ajo-slot]");
-  if (!slot || !result || !result.propositions) {
-    return;
-  }
-  const proposition = result.propositions.find(function (p) { return (p.scope || "").endsWith(AJO_OFFER_SURFACE); });
-  const item = proposition && (proposition.items || []).find(function (i) { return i.schema === HTML_CONTENT_SCHEMA; });
-  if (!item || !item.data || !item.data.content) {
-    return;
-  }
-  slot.innerHTML = item.data.content;
-  slot.hidden = false;
-  sendPropositionEvent(proposition, "decisioning.propositionDisplay", { display: 1 });
-  slot.addEventListener("click", function () {
-    sendPropositionEvent(proposition, "decisioning.propositionInteract", { interact: 1 });
-  }, { once: true });
+// Several campaigns can target one surface (e.g. one per utm_campaign
+// variant), and a visitor can qualify for more than one. JSON items may
+// carry a "campaign" key; the one matching this visit's utm_campaign wins,
+// otherwise the first (highest-ranked) item does.
+function pickPropositionContent(propositions) {
+  const utmCampaign = new URLSearchParams(window.location.search).get("utm_campaign");
+  const candidates = [];
+  propositions.forEach(function (proposition) {
+    (proposition.items || []).forEach(function (item) {
+      if ((item.schema === HTML_CONTENT_SCHEMA || item.schema === JSON_CONTENT_SCHEMA) && item.data && item.data.content) {
+        candidates.push({ proposition: proposition, item: item });
+      }
+    });
+  });
+  return candidates.find(function (c) {
+    return utmCampaign && c.item.schema === JSON_CONTENT_SCHEMA && c.item.data.content.campaign === utmCampaign;
+  }) || candidates[0] || null;
+}
+
+function renderPropositions(result) {
+  const propositions = (result && result.propositions) || [];
+  ajoSurfaceElements().forEach(function (el) {
+    if (el.hasAttribute("data-ajo-timed-out")) {
+      return;
+    }
+    const surface = el.getAttribute("data-ajo-surface");
+    const match = pickPropositionContent(propositions.filter(function (p) {
+      return (p.scope || "").endsWith(surface);
+    }));
+    if (match) {
+      if (match.item.schema === HTML_CONTENT_SCHEMA) {
+        el.innerHTML = match.item.data.content;
+        el.hidden = false;
+      } else {
+        el.dispatchEvent(new CustomEvent("ajo:content", { detail: match.item.data.content }));
+      }
+      sendPropositionEvent(match.proposition, "decisioning.propositionDisplay", { display: 1 });
+      // One listener per element; it reports whichever proposition is current
+      // (trackPageView runs again on sign-in and may re-render).
+      if (!el.ajoProposition) {
+        el.addEventListener("click", function (e) {
+          if (e.target.closest("a, button")) {
+            sendPropositionEvent(el.ajoProposition, "decisioning.propositionInteract", { interact: 1 });
+          }
+        });
+      }
+      el.ajoProposition = match.proposition;
+    }
+    el.removeAttribute("data-ajo-pending");
+  });
 }
 
 function productToListItem(product, qty) {

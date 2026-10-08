@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 640" preserveAspectRatio="xMidYMid slice">
+<rect width="1600" height="640" fill="#e6ddc6"/>
+<polygon points="700,0 820,0 520,640 400,640" fill="#b6321f" opacity="0.9"/><polygon points="820,0 940,0 640,640 520,640" fill="#b6321f" opacity="0.35"/><polygon points="940,0 1060,0 760,640 640,640" fill="#b6321f" opacity="0.9"/><polygon points="1060,0 1180,0 880,640 760,640" fill="#b6321f" opacity="0.35"/><polygon points="1180,0 1300,0 1000,640 880,640" fill="#b6321f" opacity="0.9"/><polygon points="1300,0 1420,0 1120,640 1000,640" fill="#b6321f" opacity="0.35"/><polygon points="1420,0 1540,0 1240,640 1120,640" fill="#b6321f" opacity="0.9"/><polygon points="1540,0 1660,0 1360,640 1240,640" fill="#b6321f" opacity="0.35"/><circle cx="1260" cy="330" r="190" fill="#211c15"/><circle cx="1260" cy="330" r="50" fill="none" stroke="#b6321f" stroke-width="3" opacity="0.8"/>
+<circle cx="1260" cy="330" r="76" fill="none" stroke="#b6321f" stroke-width="3" opacity="0.8"/>
+<circle cx="1260" cy="330" r="102" fill="none" stroke="#b6321f" stroke-width="3" opacity="0.8"/>
+<circle cx="1260" cy="330" r="128" fill="none" stroke="#b6321f" stroke-width="3" opacity="0.8"/>
+<circle cx="1260" cy="330" r="154" fill="none" stroke="#b6321f" stroke-width="3" opacity="0.8"/><circle cx="1260" cy="330" r="14" fill="#e6ddc6"/>
+</svg>

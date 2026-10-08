@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Deep Groove Records</title>
+  <title>Deep Groove Records — New pressings</title>
   <link rel="stylesheet" href="css/modernist.css" />
   <link rel="stylesheet" href="css/style.css" />
 
@@ -36,7 +36,7 @@
       </svg>
       Deep Groove Records
     </a>
-    <a href="index.html" aria-current="page">Home</a>
+    <a href="index.html">Home</a>
     <a href="products.html">Shop</a>
     <a class="btn btn-secondary btn-icon" href="call-center-mock.html" aria-label="Call centre mock (demo tool)" title="Call centre mock (demo tool)">
       <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
@@ -49,31 +49,49 @@
   </nav>
 
   <main class="page-wrap">
-    <section class="hero">
-      <div class="hero-copy">
-        <div class="hero-stamp-row">
-          <p class="stamp-badge">Cat# DGR&#8209;0001</p>
-          <p class="hero-issued">Issued for a Web SDK demo</p>
-        </div>
-        <h1>A selection of the best.</h1>
-        <p>A small demo record shop, built to generate real Web SDK events for Customer Journey Analytics and Adobe Journey Optimizer.</p>
-        <a class="btn btn-primary" href="products.html">Browse the crates
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
-        </a>
-        <p class="hero-index">Side A / Track 01 — 06 records in catalog</p>
+    <!-- AJO code-based experience (JSON): one campaign per utm_campaign
+         variant targets the #landing-hero surface. The markup below is the
+         default hero, shown when no campaign matches; renderPropositions()
+         in js/site.js hands a matching campaign's JSON to the
+         "ajo:content" listener at the bottom of this page. -->
+    <section class="lp-hero" data-ajo-surface="#landing-hero" data-ajo-pending aria-live="polite">
+      <img class="lp-hero-image" data-lp="image" src="assets/landing/default.svg" alt="Concentric pressing rings in ink on kraft paper" />
+      <div class="lp-hero-panel">
+        <p class="stamp-badge" data-lp="kicker">New pressings</p>
+        <h1 data-lp="headline">Fresh off the press.</h1>
+        <p data-lp="paragraph">Six records, pressed in small runs and stamped by hand. Find the one you came in for, or the one you didn't know you needed.</p>
+        <a class="btn btn-primary" data-lp="cta" href="products.html">Browse the crates</a>
       </div>
-      <div class="hero-disc-frame" id="hero-disc" aria-hidden="true"></div>
     </section>
 
-    <!-- AJO code-based experience slot: filled by renderPropositions() in js/site.js
-         for visitors in the "ad click-through, no purchase" audience. -->
-    <section class="ad-offer" data-ajo-surface="#ad-offer" hidden aria-live="polite"></section>
+    <section class="lp-shared" aria-labelledby="lp-shared-title">
+      <div class="section-head">
+        <h2 id="lp-shared-title">How a Deep Groove order works</h2>
+      </div>
+      <ol class="lp-steps">
+        <li>
+          <span class="lp-step-num">01</span>
+          <h3>Pick a pressing</h3>
+          <p>Every record in the catalogue is a numbered test pressing, so what you see is exactly what ships.</p>
+        </li>
+        <li>
+          <span class="lp-step-num">02</span>
+          <h3>We stamp and sleeve it</h3>
+          <p>Orders are packed by hand within two working days, in a stiff mailer with the catalogue number on the label.</p>
+        </li>
+        <li>
+          <span class="lp-step-num">03</span>
+          <h3>Drop the needle</h3>
+          <p>Not right? Send it back within 30 days and we'll refund the full price, postage included.</p>
+        </li>
+      </ol>
 
-    <div class="section-head">
-      <h2>Featured records</h2>
-      <a class="btn btn-ghost" href="products.html">View all</a>
-    </div>
-    <div class="product-grid" id="featured-grid"></div>
+      <div class="section-head">
+        <h2>In the crates now</h2>
+        <a class="btn btn-ghost" href="products.html">View all</a>
+      </div>
+      <div class="product-grid" id="lp-grid"></div>
+    </section>
   </main>
 
   <footer class="site-footer">
@@ -83,9 +101,9 @@
   <script src="js/products-data.js"></script>
   <script src="js/site.js"></script>
   <script>
-    const featuredGrid = document.getElementById("featured-grid");
+    const lpGrid = document.getElementById("lp-grid");
     PRODUCTS.slice(0, 3).forEach(function (p) {
-      featuredGrid.insertAdjacentHTML("beforeend", `
+      lpGrid.insertAdjacentHTML("beforeend", `
         <a class="product-tile" href="product.html?id=${p.id}">
           <div class="cover">${discMarkup(p)}</div>
           <p class="artist">${p.artist}</p>
@@ -95,8 +113,29 @@
       `);
     });
 
-    const heroProduct = PRODUCTS[0];
-    document.getElementById("hero-disc").innerHTML = discMarkup(heroProduct);
+    // Campaign JSON contract (see README): every key optional except that a
+    // missing key leaves the default hero's value in place. Text is set with
+    // textContent (never parsed as HTML) and URLs must be relative or https.
+    function safeUrl(url) {
+      if (typeof url !== "string" || !url) return null;
+      return /^(https:\/\/|[^:]*$)/i.test(url) ? url : null;
+    }
+
+    const hero = document.querySelector(".lp-hero");
+    hero.addEventListener("ajo:content", function (e) {
+      const content = e.detail || {};
+      const field = function (name) { return hero.querySelector('[data-lp="' + name + '"]'); };
+      ["kicker", "headline", "paragraph"].forEach(function (name) {
+        if (typeof content[name] === "string") field(name).textContent = content[name];
+      });
+      if (typeof content.ctaText === "string") field("cta").textContent = content.ctaText;
+      if (safeUrl(content.ctaUrl)) field("cta").href = content.ctaUrl;
+      if (safeUrl(content.imageUrl)) {
+        field("image").src = content.imageUrl;
+        field("image").alt = typeof content.imageAlt === "string" ? content.imageAlt : "";
+      }
+      if (content.campaign) hero.setAttribute("data-lp-variant", content.campaign);
+    });
 
     trackPageView();
   </script>
