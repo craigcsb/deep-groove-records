@@ -49,12 +49,13 @@
   </nav>
 
   <main class="page-wrap">
-    <!-- AJO code-based experience (JSON): one campaign per utm_campaign
-         variant targets the #landing-hero surface. The markup below is the
-         default hero, shown when no campaign matches; renderPropositions()
-         in js/site.js hands a matching campaign's JSON to the
-         "ajo:content" listener at the bottom of this page. -->
-    <section class="lp-hero" data-ajo-surface="#landing-hero" data-ajo-pending aria-live="polite">
+    <!-- AJO code-based experience (JSON) on the #landing-hero surface: one
+         campaign whose decision picks a variant item by the request's
+         marketing.campaignName (this visit's utm_campaign, or the remembered
+         one — data-ajo-campaign-context). The markup below is the default
+         hero, shown when nothing matches; renderPropositions() in js/site.js
+         hands the JSON to the "ajo:content" listener at the bottom. -->
+    <section class="lp-hero" data-ajo-surface="#landing-hero" data-ajo-campaign-context data-ajo-pending aria-live="polite">
       <img class="lp-hero-image" data-lp="image" src="assets/landing/default.svg" alt="Concentric pressing rings in ink on kraft paper" />
       <div class="lp-hero-panel">
         <p class="stamp-badge" data-lp="kicker">New pressings</p>
@@ -113,12 +114,21 @@
       `);
     });
 
-    // Campaign JSON contract (see README): every key optional except that a
-    // missing key leaves the default hero's value in place. Text is set with
-    // textContent (never parsed as HTML) and URLs must be relative or https.
-    function safeUrl(url) {
-      if (typeof url !== "string" || !url) return null;
-      return /^(https:\/\/|[^:]*$)/i.test(url) ? url : null;
+    // Campaign JSON contract (see README): every key optional; a missing or
+    // empty key leaves the default hero's value in place. AJO's template
+    // language HTML-escapes attribute values (' → &#x27;), so values are
+    // entity-decoded first. Text is set with textContent (never parsed as
+    // HTML) and URLs must be relative or https.
+    function decoded(value) {
+      if (typeof value !== "string" || !value.trim()) return null;
+      const textarea = document.createElement("textarea");
+      textarea.innerHTML = value;
+      return textarea.value;
+    }
+
+    function safeUrl(value) {
+      const url = decoded(value);
+      return url && /^(https:\/\/|[^:]*$)/i.test(url) ? url : null;
     }
 
     const hero = document.querySelector(".lp-hero");
@@ -126,15 +136,15 @@
       const content = e.detail || {};
       const field = function (name) { return hero.querySelector('[data-lp="' + name + '"]'); };
       ["kicker", "headline", "paragraph"].forEach(function (name) {
-        if (typeof content[name] === "string") field(name).textContent = content[name];
+        if (decoded(content[name])) field(name).textContent = decoded(content[name]);
       });
-      if (typeof content.ctaText === "string") field("cta").textContent = content.ctaText;
-      if (safeUrl(content.ctaUrl)) field("cta").href = content.ctaUrl;
+      if (decoded(content.ctaText)) field("cta").textContent = decoded(content.ctaText);
+      if (safeUrl(content.ctaUrl)) field("cta").href = safeUrl(content.ctaUrl);
       if (safeUrl(content.imageUrl)) {
-        field("image").src = content.imageUrl;
-        field("image").alt = typeof content.imageAlt === "string" ? content.imageAlt : "";
+        field("image").src = safeUrl(content.imageUrl);
+        field("image").alt = decoded(content.imageAlt) || "";
       }
-      if (content.campaign) hero.setAttribute("data-lp-variant", content.campaign);
+      if (decoded(content.campaign)) hero.setAttribute("data-lp-variant", decoded(content.campaign));
     });
 
     trackPageView();

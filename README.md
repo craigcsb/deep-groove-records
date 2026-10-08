@@ -124,16 +124,29 @@ The hero element requests the surface `#landing-hero`; the HTML holds a
 default hero, hidden until AJO answers (or for at most 2s, after which the
 default shows and a late answer is ignored).
 
-- **AJO:** one code-based channel configuration (Web → Pages matching rule,
-  location on page `landing-hero`, format **JSON**) and one campaign per
-  variant. Each campaign's audience is an Edge audience (Edge Merge
-  Policy) on `marketing.campaignName = <utm value>`. Targeting rules inside
-  one campaign won't work here: their audience picker only offers
-  default-merge-policy audiences.
-- **Tracking:** any page view with `utm_campaign` in the URL carries
-  `marketing.campaignName` (no `gclid` needed), so a test URL is just
-  `landing.html?utm_campaign=jazzWeek`.
-- **JSON contract** (all keys optional; a missing key keeps the default):
+- **Which variant:** the visit's `utm_campaign`, or — on a return visit
+  to the landing page without one — the last `utm_campaign` seen, kept in
+  the first-party cookie `deepgroove_last_campaign` (30 days, latest click
+  wins; only values matching `[A-Za-z0-9_-]{1,64}` are stored). Either way
+  it's sent as `marketing.campaignName` on the landing page view. Other
+  pages never send the remembered value. In a client build the cookie is
+  personalisation storage and should follow their consent tool.
+- **AJO (Decisioning):** one code-based channel configuration (Web → Pages
+  matching rule, location on page `landing-hero`, format **JSON**) and
+  **one** campaign. Its decision has one item per variant (attributes:
+  campaign, imageUrl, imageAlt, kicker, headline, paragraph, ctaText,
+  ctaUrl), each with an eligibility rule on the request's context data
+  `marketing.campaignName = <utm value>`; the campaign's JSON is a template
+  outputting the chosen item's attributes. A new campaign month = a new
+  item + rule, no site or channel change. Don't use one campaign per
+  variant with overlapping audiences: a visitor who clicks several ads
+  qualifies for all of them and AJO serves the highest-priority campaign,
+  not the latest click.
+- **Test URL:** `landing.html?utm_campaign=jazzWeek` (no `gclid` needed);
+  then `landing.html` alone should keep the jazz variant.
+- **JSON contract** (all keys optional; a missing or empty key keeps the
+  default; values are HTML-entity-decoded, since AJO's template language
+  escapes them):
 
   ```json
   {

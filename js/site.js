@@ -280,17 +280,50 @@ function trackPageView() {
 }
 
 /* ---------- Campaign click-through (utm + Google Ads gclid) ----------
-   utm_campaign is sent whenever present — the landing page variants key
-   off it alone. A gclid identifies one click, not one ad, so the "clicked
-   ad X, hasn't bought" audience needs both (trackingCode exists AND
-   campaignName = X). Only the landing page view carries these; nothing is
-   persisted. Requires the field group providing `marketing.*` on the schema. */
+   utm_campaign is sent whenever present. A gclid identifies one click, not
+   one ad, so the "clicked ad X, hasn't bought" audience needs both
+   (trackingCode exists AND campaignName = X). Requires the field group
+   providing `marketing.*` on the schema.
+
+   Last-click memory: a valid utm_campaign is also kept in a first-party
+   cookie (latest wins). On pages marked [data-ajo-campaign-context] (the
+   landing page) a view without utm_campaign sends the remembered value as
+   marketing.campaignName, which the AJO decision rules read as context
+   data — so a return visit keeps the last variant. Other pages never send
+   the remembered value, so campaign reporting isn't inflated site-wide. */
+
+const LAST_CAMPAIGN_COOKIE = "deepgroove_last_campaign";
+const LAST_CAMPAIGN_MAX_AGE = 30 * 24 * 60 * 60; // seconds
+const CAMPAIGN_KEY_PATTERN = /^[A-Za-z0-9_-]{1,64}$/;
+
+function rememberedCampaign() {
+  const match = document.cookie.match(new RegExp("(?:^|; )" + LAST_CAMPAIGN_COOKIE + "=([^;]*)"));
+  const value = match ? decodeURIComponent(match[1]) : null;
+  return value && CAMPAIGN_KEY_PATTERN.test(value) ? value : null;
+}
+
+function rememberCampaign(value) {
+  document.cookie = LAST_CAMPAIGN_COOKIE + "=" + encodeURIComponent(value) +
+    "; max-age=" + LAST_CAMPAIGN_MAX_AGE + "; path=/; SameSite=Lax" +
+    (location.protocol === "https:" ? "; Secure" : "");
+}
+
+// The campaign this page view is "for": the URL's, or on a campaign-context
+// page the remembered one.
+function currentCampaign() {
+  const fromUrl = new URLSearchParams(window.location.search).get("utm_campaign");
+  if (fromUrl) return fromUrl;
+  return document.querySelector("[data-ajo-campaign-context]") ? rememberedCampaign() : null;
+}
 
 function campaignXdm() {
   const params = new URLSearchParams(window.location.search);
+  const urlCampaign = params.get("utm_campaign");
+  if (urlCampaign && CAMPAIGN_KEY_PATTERN.test(urlCampaign)) rememberCampaign(urlCampaign);
+
   const marketing = {};
   if (params.get("gclid")) marketing.trackingCode = params.get("gclid");
-  if (params.get("utm_campaign")) marketing.campaignName = params.get("utm_campaign");
+  if (currentCampaign()) marketing.campaignName = currentCampaign();
   if (params.get("utm_source")) marketing.campaignGroup = params.get("utm_source");
   return Object.keys(marketing).length ? { marketing: marketing } : {};
 }
@@ -346,12 +379,11 @@ function sendPropositionEvent(proposition, eventType, propositionEventType) {
   });
 }
 
-// Several campaigns can target one surface (e.g. one per utm_campaign
-// variant), and a visitor can qualify for more than one. JSON items may
-// carry a "campaign" key; the one matching this visit's utm_campaign wins,
-// otherwise the first (highest-ranked) item does.
+// More than one proposition can come back for a surface (e.g. several
+// campaigns target it). JSON items may carry a "campaign" key; the one
+// matching this visit's campaign wins, otherwise the first (highest-ranked).
 function pickPropositionContent(propositions) {
-  const utmCampaign = new URLSearchParams(window.location.search).get("utm_campaign");
+  const utmCampaign = currentCampaign();
   const candidates = [];
   propositions.forEach(function (proposition) {
     (proposition.items || []).forEach(function (item) {
