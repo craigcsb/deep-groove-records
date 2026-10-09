@@ -271,12 +271,36 @@ function closeAuthModal() {
   }
 }
 
+// Whether this page has already asked AJO for its surfaces.
+let personalisationRequested = false;
+
 function trackPageView() {
   revealPendingAfterTimeout();
+  const options = personalizationOptions();
+  if (options.personalization) personalisationRequested = true;
   sendXdmEvent(
     Object.assign({ eventType: "web.webpagedetails.pageViews" }, campaignXdm()),
-    personalizationOptions()
+    options
   ).then(renderPropositions);
+}
+
+// Marketing consent given on this page (e.g. the visitor lands from an ad
+// and clicks "Agree to all"): the page view went out without surfaces, so
+// fetch them now instead of waiting for the next page. A fetch event, not
+// a second page view, so page counts stay right; it carries only the
+// campaign name the decision rules read, not the click ID (that's on the
+// page view already). Defaults are swapped for the variant — acceptable
+// here, as it follows the visitor's own click on the banner.
+function fetchPersonalisationAfterConsent() {
+  if (personalisationRequested) return;
+  const options = personalizationOptions();
+  if (!options.personalization) return;
+  personalisationRequested = true;
+  ajoSurfaceElements().forEach(function (el) { el.removeAttribute("data-ajo-timed-out"); });
+  const campaign = currentCampaign();
+  const xdm = { eventType: "decisioning.propositionFetch" };
+  if (campaign) xdm.marketing = { campaignName: campaign };
+  sendXdmEvent(xdm, options).then(renderPropositions);
 }
 
 /* ---------- Campaign click-through (utm + Google Ads gclid) ----------
@@ -540,5 +564,7 @@ document.addEventListener("DOMContentLoaded", function () {
 document.addEventListener("deepgroove:consent", function (e) {
   if (!e.detail || !e.detail.marketing) {
     document.cookie = LAST_CAMPAIGN_COOKIE + "=; max-age=0; path=/";
+  } else {
+    fetchPersonalisationAfterConsent();
   }
 });
