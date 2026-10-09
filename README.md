@@ -161,7 +161,9 @@ default shows and a late answer is ignored).
   }
   ```
 
-  Text is set as plain text, never HTML. `imageUrl`/`ctaUrl` must be
+  The object may also arrive as a JSON string (e.g. when the template
+  outputs a decision item's expression fragment holding the JSON); the
+  site parses it. Text is set as plain text, never HTML. `imageUrl`/`ctaUrl` must be
   relative or `https://`. `campaign` should equal the variant's
   `utm_campaign`: if a visitor qualifies for several variants, the one
   matching the current URL wins. Placeholder images for three variants

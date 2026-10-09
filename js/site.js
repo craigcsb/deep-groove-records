@@ -393,8 +393,20 @@ function pickPropositionContent(propositions) {
     });
   });
   return candidates.find(function (c) {
-    return utmCampaign && c.item.schema === JSON_CONTENT_SCHEMA && c.item.data.content.campaign === utmCampaign;
+    return utmCampaign && c.item.schema === JSON_CONTENT_SCHEMA && jsonContent(c.item.data.content).campaign === utmCampaign;
   }) || candidates[0] || null;
+}
+
+// JSON content normally arrives parsed, but a template that renders a
+// fragment (e.g. a decision item's JSON fragment) can arrive as a string.
+function jsonContent(content) {
+  if (typeof content !== "string") return content;
+  try {
+    return JSON.parse(content);
+  } catch (e) {
+    console.warn("[ajo] JSON content could not be parsed:", content);
+    return {};
+  }
 }
 
 function renderPropositions(result) {
@@ -412,7 +424,7 @@ function renderPropositions(result) {
         el.innerHTML = match.item.data.content;
         el.hidden = false;
       } else {
-        el.dispatchEvent(new CustomEvent("ajo:content", { detail: match.item.data.content }));
+        el.dispatchEvent(new CustomEvent("ajo:content", { detail: jsonContent(match.item.data.content) }));
       }
       sendPropositionEvent(match.proposition, "decisioning.propositionDisplay", { display: 1 });
       // One listener per element; it reports whichever proposition is current
