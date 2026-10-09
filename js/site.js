@@ -285,12 +285,15 @@ function trackPageView() {
    (trackingCode exists AND campaignName = X). Requires the field group
    providing `marketing.*` on the schema.
 
-   Last-click memory: a valid utm_campaign is also kept in a first-party
-   cookie (latest wins). On pages marked [data-ajo-campaign-context] (the
-   landing page) a view without utm_campaign sends the remembered value as
-   marketing.campaignName, which the AJO decision rules read as context
-   data — so a return visit keeps the last variant. Other pages never send
-   the remembered value, so campaign reporting isn't inflated site-wide. */
+   Last-variant memory: when an element marked [data-ajo-campaign-context]
+   (the landing hero) actually renders a variant, its campaign is kept in a
+   first-party cookie (latest wins). A campaign with no variant — a typo,
+   an untagged ad, one not built yet — shows the default and leaves the
+   remembered variant alone. On those pages a view without utm_campaign
+   sends the remembered value as marketing.campaignName, which the AJO
+   decision rules read as context data — so a return visit keeps the last
+   variant. Other pages never send the remembered value, so campaign
+   reporting isn't inflated site-wide. */
 
 const LAST_CAMPAIGN_COOKIE = "deepgroove_last_campaign";
 const LAST_CAMPAIGN_MAX_AGE = 30 * 24 * 60 * 60; // seconds
@@ -318,9 +321,6 @@ function currentCampaign() {
 
 function campaignXdm() {
   const params = new URLSearchParams(window.location.search);
-  const urlCampaign = params.get("utm_campaign");
-  if (urlCampaign && CAMPAIGN_KEY_PATTERN.test(urlCampaign)) rememberCampaign(urlCampaign);
-
   const marketing = {};
   if (params.get("gclid")) marketing.trackingCode = params.get("gclid");
   if (currentCampaign()) marketing.campaignName = currentCampaign();
@@ -429,7 +429,15 @@ function renderPropositions(result) {
         el.innerHTML = match.item.data.content;
         el.hidden = false;
       } else {
-        el.dispatchEvent(new CustomEvent("ajo:content", { detail: jsonContent(match.item.data.content) }));
+        const content = jsonContent(match.item.data.content);
+        el.dispatchEvent(new CustomEvent("ajo:content", { detail: content }));
+        // The variant's own campaign key, so only campaigns that really
+        // have a variant are remembered (see campaignXdm).
+        const shownCampaign = content && content.campaign;
+        if (el.hasAttribute("data-ajo-campaign-context") && typeof shownCampaign === "string" &&
+            CAMPAIGN_KEY_PATTERN.test(shownCampaign)) {
+          rememberCampaign(shownCampaign);
+        }
       }
       sendPropositionEvent(match.proposition, "decisioning.propositionDisplay", { display: 1 });
       // One listener per element; it reports whichever proposition is current

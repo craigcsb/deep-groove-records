@@ -125,12 +125,15 @@ default hero, hidden until AJO answers (or for at most 2s, after which the
 default shows and a late answer is ignored).
 
 - **Which variant:** the visit's `utm_campaign`, or — on a return visit
-  to the landing page without one — the last `utm_campaign` seen, kept in
-  the first-party cookie `deepgroove_last_campaign` (30 days, latest click
-  wins; only values matching `[A-Za-z0-9_-]{1,64}` are stored). Either way
-  it's sent as `marketing.campaignName` on the landing page view. Other
-  pages never send the remembered value. In a client build the cookie is
-  personalisation storage and should follow their consent tool.
+  to the landing page without one — the last campaign whose variant was
+  actually shown, kept in the first-party cookie `deepgroove_last_campaign`
+  (30 days, refreshed each time it's shown; set from the variant JSON's
+  `campaign` key, which must match `[A-Za-z0-9_-]{1,64}`). A campaign with
+  no variant (typo, untagged ad, not built yet) shows the default and
+  leaves the remembered variant alone. Either way the campaign is sent as
+  `marketing.campaignName` on the landing page view. Other pages never send
+  the remembered value. In a client build the cookie is personalisation
+  storage and should follow their consent tool.
 - **AJO (Decisioning):** one code-based channel configuration (Web → Pages
   matching rule, location on page `landing-hero`, format **JSON**) and
   **one** campaign. Its decision has one item per variant (attributes:
