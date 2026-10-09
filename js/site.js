@@ -316,7 +316,7 @@ function rememberCampaign(value) {
 function currentCampaign() {
   const fromUrl = new URLSearchParams(window.location.search).get("utm_campaign");
   if (fromUrl) return fromUrl;
-  return document.querySelector("[data-ajo-campaign-context]") ? rememberedCampaign() : null;
+  return document.querySelector("[data-ajo-campaign-context]") && hasMarketingConsent() ? rememberedCampaign() : null;
 }
 
 function campaignXdm() {
@@ -348,7 +348,17 @@ function ajoSurfaceElements() {
   return Array.prototype.slice.call(document.querySelectorAll("[data-ajo-surface]"));
 }
 
+// Personalisation is marketing consent on this site (as on ubs.com, which
+// files Adobe Target under marketing). Without it — or before any choice —
+// no surfaces are requested and defaults show straight away.
+function hasMarketingConsent() {
+  return !!(window.deepGrooveConsent && window.deepGrooveConsent.has("marketing"));
+}
+
 function personalizationOptions() {
+  if (!hasMarketingConsent()) {
+    return {};
+  }
   const surfaces = ajoSurfaceElements()
     .map(function (el) { return el.getAttribute("data-ajo-surface"); })
     .filter(function (surface, i, all) { return all.indexOf(surface) === i; });
@@ -359,6 +369,14 @@ function personalizationOptions() {
 }
 
 function revealPendingAfterTimeout() {
+  if (!hasMarketingConsent()) {
+    // Nothing will be requested, so don't make the visitor wait.
+    document.querySelectorAll("[data-ajo-pending]").forEach(function (el) {
+      el.removeAttribute("data-ajo-pending");
+      el.setAttribute("data-ajo-timed-out", "");
+    });
+    return;
+  }
   setTimeout(function () {
     document.querySelectorAll("[data-ajo-pending]").forEach(function (el) {
       el.removeAttribute("data-ajo-pending");
@@ -515,4 +533,12 @@ function trackPurchase(order, cart, email) {
 document.addEventListener("DOMContentLoaded", function () {
   updateCartBadge();
   updateAuthUI();
+});
+
+// Withdrawing marketing consent removes the site's personalisation memory.
+// (The Tags click-ID callback clears its own cookie the same way.)
+document.addEventListener("deepgroove:consent", function (e) {
+  if (!e.detail || !e.detail.marketing) {
+    document.cookie = LAST_CAMPAIGN_COOKIE + "=; max-age=0; path=/";
+  }
 });

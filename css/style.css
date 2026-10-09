@@ -218,3 +218,47 @@ footer.site-footer {
   font-family: var(--font-stamp);
   border-top: 2px solid var(--color-divider); margin-top: var(--space-8);
 }
+
+/* — consent manager (js/consent.js): a kraft card pinned to the bottom of
+     the page, over a dimmed backdrop, like a pressing-plant order slip — */
+.consent-overlay {
+  position: fixed; inset: 0; z-index: 200;
+  display: flex; align-items: flex-end; justify-content: center;
+  padding: var(--space-4);
+  background: color-mix(in srgb, var(--color-ink) 40%, transparent);
+}
+.consent-panel {
+  width: min(560px, 100%); max-height: calc(100vh - 2 * var(--space-4)); overflow-y: auto;
+  padding: var(--space-6); background: var(--color-bg);
+  border: 2px solid var(--color-ink); border-radius: var(--radius-md); box-shadow: var(--shadow-lg);
+}
+.consent-panel h2 { font-size: 20px; margin: 0 0 var(--space-2); }
+.consent-panel p { margin: 0 0 var(--space-4); }
+.consent-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-bottom: var(--space-4); }
+.consent-small { font-size: 13px; color: color-mix(in srgb, var(--color-text) 65%, transparent); }
+.consent-prefs { display: grid; gap: var(--space-3); }
+.consent-prefs .consent-actions { margin: var(--space-2) 0 0; }
+.consent-toggle {
+  display: grid; grid-template-columns: auto minmax(0, 1fr); gap: var(--space-3);
+  align-items: start; cursor: pointer;
+}
+.consent-toggle input { position: absolute; opacity: 0; pointer-events: none; }
+.consent-switch {
+  width: 40px; height: 22px; margin-top: 1px; border-radius: 11px; position: relative;
+  background: color-mix(in srgb, var(--color-ink) 25%, transparent); transition: background 0.15s ease;
+}
+.consent-switch::after {
+  content: ""; position: absolute; top: 3px; left: 3px; width: 16px; height: 16px;
+  border-radius: 50%; background: var(--color-neutral-100); transition: transform 0.15s ease;
+}
+.consent-toggle input:checked + .consent-switch { background: var(--color-ink); }
+.consent-toggle input:checked + .consent-switch::after { transform: translateX(18px); }
+.consent-toggle input:focus-visible + .consent-switch { outline: 2px solid var(--color-accent); outline-offset: 2px; }
+.consent-help { display: block; font-size: 13px; color: color-mix(in srgb, var(--color-text) 65%, transparent); }
+.consent-footer-link {
+  font: inherit; color: inherit; background: none; border: 0; padding: 0;
+  text-decoration: underline; cursor: pointer;
+}
+@media (max-width: 640px) {
+  .consent-actions .btn { flex: 1 1 100%; }
+}

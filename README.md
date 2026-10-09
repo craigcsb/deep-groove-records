@@ -172,6 +172,48 @@ default shows and a late answer is ignored).
   matching the current URL wins. Placeholder images for three variants
   live in `assets/landing/` (`jazz.svg`, `rock.svg`, `soul.svg`).
 
+## Consent (mock of ubs.com's in-house consent manager)
+
+`js/consent.js` (loaded on every storefront page before `site.js`) copies
+ubs.com's behaviour so the Tags setup carries over:
+
+- Cookie `deepgroove_cookie_settings`, same format as UBS's
+  `ubs_cookie_settings_2.0.4`: dash-separated IDs switched on — `0`,`1`
+  always, `2` user preference, `3` statistics, `4` marketing (all off
+  `0-1`, all on `0-4-3-2-1`). No cookie = no choice yet.
+- First-visit banner (Agree to all / Decline all / Set preferences),
+  preferences dialog with pre-ticked toggles, "Privacy Settings" in the
+  footer. Saving fires `_satellite.track("deepgroove-consent")` and a
+  `deepgroove:consent` DOM event.
+- Statistics → Web SDK `general` consent via a Tags rule (default consent
+  **pending**, as on ubs.com). Marketing → AJO personalisation (site
+  code; no surfaces requested and no waiting without it) and click-ID
+  capture (Tags callback). Withdrawing marketing deletes the
+  last-campaign and click-ID cookies.
+- Tags steps: `tags/consent-setup.md`.
+
+## Ad click IDs for event forwarding (set up in Tags, not site code)
+
+Ad platforms' conversion APIs (Google Ads, Meta CAPI, LinkedIn CAPI) match
+a server-side conversion to the ad click by its click ID. Capture lives in
+the Tags property — the Web SDK extension's "On before event send"
+callback, versioned in `tags/web-sdk-on-before-event-send.js` (the site
+doesn't load that file):
+
+- Reads `gclid`, `gbraid`, `wbraid`, `fbclid`, `li_fat_id` from the URL on
+  page views, keeps them in the first-party cookie `deepgroove_click_ids`
+  (latest click per platform wins, 90 days), and adds the landing's IDs to
+  that page view.
+- Adds every remembered ID to `commerce.purchases` events.
+- Puts them in sendEvent's free-form `data.clickIds` (plus a
+  `<name>ClickTime` each, and Meta's `fbc` = `fb.1.<click ms>.<fbclid>`),
+  not XDM: event forwarding reads `arc.event.data.clickIds`, and nothing is
+  written to AEP datasets, so no schema change.
+- Event forwarding (a separate Tags property, added to the datastream as
+  a service) posts click and purchase payloads to the partner — or, for
+  testing without partner accounts, to a request inspector such as
+  webhook.site.
+
 ## Cross-channel / authenticated identity
 
 The checkout page's optional email field is wired to identity: on "Place
