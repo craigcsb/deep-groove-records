@@ -387,7 +387,12 @@ function pickPropositionContent(propositions) {
   const candidates = [];
   propositions.forEach(function (proposition) {
     (proposition.items || []).forEach(function (item) {
-      if ((item.schema === HTML_CONTENT_SCHEMA || item.schema === JSON_CONTENT_SCHEMA) && item.data && item.data.content) {
+      // A template that renders nothing (e.g. a decision with no eligible
+      // item) can still arrive as whitespace — treat that as no content so
+      // the default stays and no display event is counted.
+      const content = item.data && item.data.content;
+      const hasContent = typeof content === "string" ? content.trim() !== "" : !!content;
+      if ((item.schema === HTML_CONTENT_SCHEMA || item.schema === JSON_CONTENT_SCHEMA) && hasContent) {
         candidates.push({ proposition: proposition, item: item });
       }
     });
