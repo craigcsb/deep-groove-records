@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ad Click Simulator</title>
+  <meta name="robots" content="noindex" />
+  <!-- Test harness only: stands in for three ad platforms. Deliberately
+       loads no Tags, consent manager or site tracking — a real ad is shown
+       off-site, so the first thing the shop sees is the landing page view
+       carrying the click ID. Each click builds a fresh click ID in the
+       format the platform uses, plus its UTM parameters, and opens
+       landing.html. Generic mock layouts; no platform logos. -->
+  <style>
+    :root {
+      --page: #eef0f3; --text: #1c1e21; --muted: #5f6368; --card: #ffffff; --line: #dadce0;
+      --google-link: #1a0dab; --meta-blue: #1877f2; --li-blue: #0a66c2;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) {
+        --page: #18191a; --text: #e4e6eb; --muted: #b0b3b8; --card: #242526; --line: #3e4042;
+        --google-link: #8ab4f8; --meta-blue: #4599ff; --li-blue: #70b5f9;
+      }
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; background: var(--page); color: var(--text);
+      font: 15px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+    header { max-width: 1180px; margin: 0 auto; padding: 32px 16px 8px; }
+    header h1 { font-size: 22px; margin: 0 0 6px; }
+    header p { margin: 0 0 6px; color: var(--muted); max-width: 72ch; }
+    .grid {
+      max-width: 1180px; margin: 0 auto; padding: 16px;
+      display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; align-items: start;
+    }
+    @media (max-width: 960px) { .grid { grid-template-columns: minmax(0, 1fr); max-width: 560px; } }
+    .platform { font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); margin: 0 0 8px; }
+    .ad { background: var(--card); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+    .ad a { color: inherit; text-decoration: none; display: block; }
+    .ad img { display: block; width: 100%; aspect-ratio: 1.91 / 1; object-fit: cover; background: #e6ddc6; }
+    .url { margin-top: 10px; font: 12px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--muted); word-break: break-all; }
+
+    /* Google: search ad on top of a responsive display unit */
+    .g-body { padding: 14px 16px 16px; }
+    .g-sponsored { font-size: 12px; font-weight: 700; margin-bottom: 4px; }
+    .g-site { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+    .g-fav { width: 26px; height: 26px; border-radius: 50%; background: #f1f3f4; display: grid; place-items: center; font-size: 13px; color: #b6321f; font-weight: 800; }
+    .g-site small { display: block; color: var(--muted); }
+    .g-title { color: var(--google-link); font-size: 19px; line-height: 1.3; margin: 8px 0 4px; }
+    .ad a:hover .g-title { text-decoration: underline; }
+    .g-desc { color: var(--muted); font-size: 14px; margin: 0; }
+
+    /* Meta / LinkedIn: feed post */
+    .post-head { display: flex; gap: 10px; align-items: center; padding: 12px 14px; }
+    .avatar { width: 40px; height: 40px; border-radius: 50%; background: #211c15; color: #f0ede1; display: grid; place-items: center; font-weight: 800; font-size: 15px; flex: none; }
+    .li .avatar { border-radius: 4px; }
+    .post-head strong { display: block; font-size: 15px; }
+    .post-head small { color: var(--muted); font-size: 12px; }
+    .post-text { padding: 0 14px 12px; margin: 0; }
+    .link-bar { display: flex; align-items: center; gap: 12px; padding: 10px 14px; background: color-mix(in srgb, var(--line) 35%, var(--card)); }
+    .link-bar div { flex: 1 1 auto; min-width: 0; }
+    .link-bar small { display: block; color: var(--muted); font-size: 12px; text-transform: uppercase; }
+    .link-bar strong { display: block; font-size: 15px; line-height: 1.3; }
+    .btn { flex: none; border-radius: 6px; padding: 8px 14px; font-weight: 600; font-size: 14px; }
+    .meta .btn { background: color-mix(in srgb, var(--line) 80%, var(--card)); }
+    .li .btn { border: 1.5px solid var(--li-blue); color: var(--li-blue); border-radius: 18px; }
+    .ad:focus-within { outline: 3px solid var(--meta-blue); outline-offset: 2px; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Ad click simulator</h1>
+    <p>Mock ads for testing the Deep Groove landing page — not real ads. Each click generates a new
+    click ID in the platform's format and opens the landing page with it.</p>
+    <p>For a clean test, close every incognito window, open this page in a new one, and click one ad.</p>
+  </header>
+
+  <main class="grid">
+    <section aria-labelledby="google-label">
+      <p class="platform" id="google-label">Google Ads · Rock</p>
+      <article class="ad google">
+        <a data-ad="google" href="landing.html">
+          <div class="g-body">
+            <div class="g-sponsored">Sponsored</div>
+            <div class="g-site">
+              <span class="g-fav" aria-hidden="true">DG</span>
+              <span>Deep Groove Records<small>craigcsb.github.io › rock-week</small></span>
+            </div>
+            <div class="g-title">Rock Week at Deep Groove — Turn It Up to the Run-Out Groove</div>
+            <p class="g-desc">Loud records, heavy vinyl. The rock pressings are back in the crates for one week only. Shop the rock crate.</p>
+          </div>
+          <img src="assets/landing/rock.svg" alt="Red angular bands behind a black record" />
+        </a>
+      </article>
+      <div class="url" data-url-for="google"></div>
+    </section>
+
+    <section aria-labelledby="meta-label">
+      <p class="platform" id="meta-label">Meta · Jazz</p>
+      <article class="ad meta">
+        <a data-ad="meta" href="landing.html">
+          <div class="post-head">
+            <span class="avatar" aria-hidden="true">DG</span>
+            <span><strong>Deep Groove Records</strong><small>Sponsored</small></span>
+          </div>
+          <p class="post-text">Blue notes, pressed fresh. Seven days of jazz pressings, from hard bop to late-night ballads. 🎷</p>
+          <img src="assets/landing/jazz.svg" alt="Blue record over diagonal hairlines" />
+          <div class="link-bar">
+            <div><small>craigcsb.github.io</small><strong>Jazz Week: Blue notes, pressed fresh</strong></div>
+            <span class="btn">Shop now</span>
+          </div>
+        </a>
+      </article>
+      <div class="url" data-url-for="meta"></div>
+    </section>
+
+    <section aria-labelledby="li-label">
+      <p class="platform" id="li-label">LinkedIn · Soul</p>
+      <article class="ad li">
+        <a data-ad="linkedin" href="landing.html">
+          <div class="post-head">
+            <span class="avatar" aria-hidden="true">DG</span>
+            <span><strong>Deep Groove Records</strong><small>Promoted</small></span>
+          </div>
+          <p class="post-text">Warm records for cold evenings. Classic soul pressings, cut loud and pressed heavy — put one on and let it play.</p>
+          <img src="assets/landing/soul.svg" alt="Ochre sunburst rising behind a record" />
+          <div class="link-bar">
+            <div><small>craigcsb.github.io</small><strong>Soul Week: Shop the soul crate</strong></div>
+            <span class="btn">Learn more</span>
+          </div>
+        </a>
+      </article>
+      <div class="url" data-url-for="linkedin"></div>
+    </section>
+  </main>
+
+  <script>
+    // Random strings in the shape each platform's click ID takes:
+    // gclid  ~ "Cj0KCQjw…" base64url, fbclid ~ "IwAR…" base64url,
+    // li_fat_id = a UUID. All prefixed TEST so they're easy to spot.
+    function randomB64(len) {
+      const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
+      const bytes = crypto.getRandomValues(new Uint8Array(len));
+      return Array.from(bytes, function (b) { return chars[b % 64]; }).join("");
+    }
+
+    const ADS = {
+      google: function () {
+        return { gclid: "TEST-Cj0KCQjw" + randomB64(80), utm_source: "google", utm_medium: "cpc", utm_campaign: "rockWeek" };
+      },
+      meta: function () {
+        return { fbclid: "TEST-IwAR" + randomB64(56), utm_source: "facebook", utm_medium: "paid_social", utm_campaign: "jazzWeek" };
+      },
+      linkedin: function () {
+        return { li_fat_id: "TEST-" + crypto.randomUUID(), utm_source: "linkedin", utm_medium: "paid_social", utm_campaign: "soulWeek" };
+      }
+    };
+
+    // A new click ID per click, like a real ad click.
+    function refresh(link) {
+      const name = link.getAttribute("data-ad");
+      const url = "landing.html?" + new URLSearchParams(ADS[name]()).toString();
+      link.href = url;
+      document.querySelector('[data-url-for="' + name + '"]').textContent = url;
+    }
+
+    document.querySelectorAll("[data-ad]").forEach(function (link) {
+      refresh(link);
+      // pointerdown/keydown run before navigation, so the clicked link
+      // already carries a fresh ID; the shown URL is what will open.
+      link.addEventListener("pointerdown", function () { refresh(link); });
+      link.addEventListener("keydown", function (e) { if (e.key === "Enter") refresh(link); });
+    });
+  </script>
+</body>
+</html>
