@@ -10,6 +10,7 @@ in that document lives.
 | `web-sdk-on-before-event-send.js` | Web SDK extension → "On before event send" callback |
 | `consent-setup.md` | Default consent, consent data element and Set consent rule |
 | `event-forwarding-setup.md` | Event forwarding data elements, rules, connector mapping |
+| `client/web-sdk-on-before-event-send.template.js` | Client version of the callback: site-specific values (consent cookie, click-ID cookie, landing paths, conversion event type) in one CONFIG block, with TODOs |
 
 ## Document → implementation
 
